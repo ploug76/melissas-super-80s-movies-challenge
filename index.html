@@ -734,8 +734,10 @@ function drawBeach(){const R=G,gy=groundY(),X0=W*.3,a=R.alpha||0,dist=R.pDist+(R
  for(let i=R.hi;i<R.haz.length;i++){const o=R.haz[i];if(o.d0-dist>60)break;if((o.k==='gull'||o.k==='ball')&&o.act&&X0+(o.cd-dist)*U>W-10){const y=o.k==='gull'?gy-40*S:gy-20*S;circ(W-24*S,y,15*S,'rgba(255,60,90,.85)');txt('!',W-24*S,y+7*S,fs(20),'#fff',null,true)}}
  g.restore();
  // HUD: progress, shells, hearts, combo, boost
- const w=Math.min(W-40,300*S),bx=(W-w)/2,by=HUDH()+8*S;g.fillStyle='rgba(0,0,0,.55)';rr(bx,by,w,26*S,13*S);g.fill();g.fillStyle='#ffb03a';rr(bx+3,by+3,Math.max(10,(w-6)*Math.min(1,dist/R.len)),26*S-6,10*S);g.fill();
- const cpx=bx+3+(w-6)*R.cp/R.len;g.fillStyle=R.cpPassed?'#2ecc71':'#fff';g.fillRect(cpx-1.5,by+2,3,26*S-4);txt(`🐚 ${R.got}/${R.total}`,bx+w/2,by+19*S,fs(16),'#fff');
+ const w=Math.min(W-40,300*S),bx=LAND()?W-SAFE.r-16*S-w:(W-w)/2,by=HUDH()+8*S; // landscape: HUD sits top-right so the horse's head stays clear at the double-jump apex
+ g.fillStyle='rgba(0,0,0,.55)';rr(bx,by,w,26*S,13*S);g.fill();g.fillStyle='#ffb03a';rr(bx+3,by+3,Math.max(10,(w-6)*Math.min(1,dist/R.len)),26*S-6,10*S);g.fill();
+ const cpx=bx+3+(w-6)*R.cp/R.len;g.fillStyle=R.cpPassed?'#2ecc71':'#fff';g.fillRect(cpx-1.5,by+2,3,26*S-4);
+ {const sl=`🐚 ${R.got}/${R.total}`,sp=fs(16);font(sp,true);const tw=g.measureText(sl).width+16*S,th=26*S-6;g.fillStyle='rgba(20,5,45,.88)';rr(bx+w/2-tw/2,by+3,tw,th,10*S);g.fill();txt(sl,bx+w/2,by+19*S,sp,'#fff')} // count drawn over the checkpoint tick on its own backing
  const y2=by+32*S;g.fillStyle='rgba(0,0,0,.45)';rr(bx,y2,w,26*S,13*S);g.fill();txt('❤️'.repeat(Math.max(0,R.hearts))+'🤍'.repeat(Math.max(0,3-R.hearts)),bx+10*S,y2+19*S,fs(16),'#fff','left');
  txt(R.boost>0?`⚡ BOOST ${R.boost.toFixed(1)}`:(R.combo>0?`Combo ${R.combo} · x${R.mult}`:''),bx+w-10*S,y2+19*S,fs(16),R.boost>0?'#ffe14a':(R.mult>1?'#ffe14a':'#fff'),'right');
  // messages sit on the sand, below the action strip and clear of the JUMP button
@@ -840,7 +842,9 @@ function drawHUD(){const top=SAFE.t+8*S,sz=IB();iconBtn('pause',W-SAFE.r-sz-10*S
   else{const [x,y,w,h]=b.rect,dn=HELD[b.id];g.fillStyle=dn?'#fff':b.col;rr(x,y,w,h,14);g.fill();g.strokeStyle='#fff';g.lineWidth=3;g.stroke();txt(b.label,x+w/2,y+h/2+12*S,fs(34),'#1a0630',null,true)}}
  if(G.eng!=='rhythm'&&G.t<5){const a=Math.min(1,(5-G.t)/1.5);g.globalAlpha=a;const x=SAFE.l+20*S,y=H-SAFE.b-40*S;txt('👆 Swipe anywhere to steer',x,y,fs(17),'#fff','left',true,'rgba(0,0,0,.6)');g.globalAlpha=1}
  if(G.msgT>0&&G.msg){const p=fs(19);const ln=wrap(G.msg,W-60,p);const y=HUDH()+96*S+p;g.globalAlpha=Math.min(1,G.msgT*2);g.fillStyle='rgba(20,5,45,.85)';rr(20,y-p-10,W-40,ln.length*(p+6)+16,14);g.fill();ln.forEach((l,k)=>txt(l,W/2,y+k*(p+6),p,'#fff',null,true));g.globalAlpha=1}
- if(G.intro>0){G.intro-=1/60;const a=Math.min(1,G.intro);g.globalAlpha=a;const p=fs(30);g.fillStyle='rgba(20,5,45,.8)';rr(20,H*.42,W-40,p+60*S,16);g.fill();txt(lv.name,W/2,H*.42+p+12*S,p,'#ffe14a',null,true);txt('GO!',W/2,H*.42+p+44*S,fs(22),'#fff',null,true);g.globalAlpha=1}}
+ if(G.intro>0&&G.kind==='beach'&&LAND()){G.intro-=1/60;const a=Math.min(1,G.intro);g.globalAlpha=a;const L0=W*.3+90*S,R0=W-SAFE.r-26*S-Math.min(W-40,300*S),bw=R0-L0,bx0=L0,p=fitPx(lv.name,bw-20,fs(26),16),q=fs(20),bh=p+q+22*S,y0=HUDH()+6*S; // landscape beach: compact banner up in the sky between the horse and the beach HUD, clear of the strip
+  g.fillStyle='rgba(20,5,45,.8)';rr(bx0,y0,bw,bh,14);g.fill();txt(lv.name,bx0+bw/2,y0+p+6*S,p,'#ffe14a',null,true);txt('GO!',bx0+bw/2,y0+p+q+12*S,q,'#fff',null,true);g.globalAlpha=1}
+ else if(G.intro>0){G.intro-=1/60;const a=Math.min(1,G.intro);g.globalAlpha=a;const p=fs(30);g.fillStyle='rgba(20,5,45,.8)';rr(20,H*.42,W-40,p+60*S,16);g.fill();txt(lv.name,W/2,H*.42+p+12*S,p,'#ffe14a',null,true);txt('GO!',W/2,H*.42+p+44*S,fs(22),'#fff',null,true);g.globalAlpha=1}}
 function drawPause(){g.fillStyle='rgba(10,0,30,.82)';g.fillRect(0,0,W,H);if(LAND())return drawPauseL();const bw=Math.min(W-60,320*S),bx=(W-bw)/2;let y=SAFE.t+80*S;txt('PAUSED',W/2,y,fs(36),'#ffe14a',null,true);y+=36*S;const bh=56*S,g2=14*S;
  button('resume',bx,y,bw,bh,'▶ Resume','#1f9d55',()=>{state='play';resetInput()});y+=bh+g2;button('restart',bx,y,bw,bh,'↺ Restart level','#e0439a',()=>startLevel());y+=bh+g2;
  button('plevels',bx,y,bw,bh,'Levels','#6a4ad0',()=>go('levels'));y+=bh+g2;button('pmus',bx,y,bw,bh,save.music?'🎵 Music: ON':'🔇 Music: OFF',save.music?'#2f8a8a':'#7d8aa0',()=>{audioInit();setMusic(!save.music)});y+=bh+g2;
