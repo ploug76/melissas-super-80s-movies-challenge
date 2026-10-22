@@ -196,7 +196,7 @@ function drawMel(x,y,s,o,opt){o=OUT[o]||OUT.casual;opt=opt||{};const ph=opt.ph||
  if(o.band){g.fillStyle=o.band;g.fillRect(x-11*s,shY-29*s,22*s,3*s)}
  if(o.shades&&opt.shades!==false){g.fillStyle='rgba(20,20,30,.85)';rr(x-8*s,shY-23.5*s,7*s,4*s,1.5*s);g.fill();rr(x+1*s,shY-23.5*s,7*s,4*s,1.5*s);g.fill();g.fillRect(x-1*s,shY-22.5*s,2*s,1*s)}
  // gold hoop earrings
- g.strokeStyle='#e8c040';g.lineWidth=1.2*s;g.beginPath();g.ellipse(x-10.5*s,shY-12*s,1.8*s,3*s,0,0,TAU);g.stroke();g.beginPath();g.ellipse(x+10.5*s,shY-12*s,1.8*s,3*s,0,0,TAU);g.stroke();
+ g.strokeStyle='#f0cc50';g.lineWidth=Math.max(.8,.75*s);g.beginPath();g.ellipse(x-9.2*s,shY-13.5*s,1.3*s,2.3*s,0,0,TAU);g.stroke();g.beginPath();g.ellipse(x+9.2*s,shY-13.5*s,1.3*s,2.3*s,0,0,TAU);g.stroke();
  g.restore()}
 // Danny: an ORIGINAL generic guy (sandy curly hair, freckles, friendly grin). Outfits: bike/helmet, ranch, flight, tux
 function drawDanny(x,y,s,kind,opt){opt=opt||{};const ph=opt.ph||0,sw=opt.walk?Math.sin(ph):0;g.save();ell(x,y,14*s,4*s,'rgba(0,0,0,.25)');
