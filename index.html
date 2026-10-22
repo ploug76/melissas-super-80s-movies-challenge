@@ -433,7 +433,7 @@ function drawRoad(){const Gr=G,R=roadGeom(),chase=Gr.kind==='chase',off=(Gr.dist
  else{const w=Math.min(W-40,300*S),x=(W-w)/2;g.fillStyle='rgba(0,0,0,.6)';rr(x,y,w,30*S,13*S);g.fill();for(let k=0;k<6;k++)txt('⚡',x+22*S+k*24*S,y+23*S,fs(18),k<Gr.bolts?'#ffe14a':'rgba(255,255,255,.25)');
   txt(`${Gr.mph||0} mph`,x+w-12*S,y+23*S,fs(20),Gr.mph>=88?'#7ff':'#fff','right')}}
 // ================= RUNNER engine (Beach Gallop, Moonshot Finale) =================
-function mkRun(kind){return{eng:'run',kind,t:0,score:0,dist:0,speed:kind==='beach'?11:10,y:0,vy:0,air:false,hit:0,obs:[],pick:[],next:30,nextP:12,got:0,ph:0,fx:[],msg:'',msgT:0,len:kind==='beach'?1000:1200,fly:false,shake:0}}
+function mkRun(kind){if(kind==='beach')return mkBeach();return{eng:'run',kind,t:0,score:0,dist:0,speed:kind==='beach'?11:10,y:0,vy:0,air:false,hit:0,obs:[],pick:[],next:30,nextP:12,got:0,ph:0,fx:[],msg:'',msgT:0,len:kind==='beach'?1000:1200,fly:false,shake:0}}
 // Ground jump tuning (v3 fix): the old jump (v17/16, gravity 46) cleared a wave's hurtbox for only ~0.37 s, which at
 // gallop speed (~12 u/s) covers 4.5 u while the wave's hit zone was 5.2 u wide, so no wave could be jumped cleanly.
 // Now: a higher, floatier jump, a 0.15 s jump buffer (a tap just before landing still jumps), and fair hurtboxes
@@ -442,7 +442,7 @@ const RUNJ={vBeach:18,vMoon:17.5,g:40,buf:.15,phw:.7};
 function runHurt(o){return{hw:o.w*.4+RUNJ.phw,hh:o.h*.85}}
 function groundY(){return H-CTRLH()-70*S}
 const RPM=()=>10*S;
-function upRun(dt){const R=G;R.t+=dt;if(R.msgT>0)R.msgT-=dt;if(R.shake>0)R.shake-=dt;const st=steer(),beach=R.kind==='beach';
+function upRun(dt){if(G.kind==='beach')return upBeach(G,dt);const R=G;R.t+=dt;if(R.msgT>0)R.msgT-=dt;if(R.shake>0)R.shake-=dt;const st=steer(),beach=R.kind==='beach';
  let target=(beach?12:11)+st.x*4;if(R.hit>0){R.hit-=dt;target=9}R.speed=lerp(R.speed,target,dt*2);R.dist+=R.speed*dt;R.ph+=R.speed*dt*.9;R.score+=dt*5;
  let sw=popSwipe();while(sw){if(sw==='U')ACT.a=true;sw=popSwipe()}
  if(!beach&&!R.fly&&R.dist>=420){R.fly=true;R.vy=-14;sfx('jump');say('Liftoff! Hold FLY to soar across the moon!',2.4)}
@@ -458,7 +458,7 @@ function upRun(dt){const R=G;R.t+=dt;if(R.msgT>0)R.msgT-=dt;if(R.shake>0)R.shake
  R.obs=R.obs.filter(o=>o.rx>-20);
  for(const p of R.pick){p.rx=p.d-R.dist;if(!p.got&&Math.abs(p.rx)<1.6&&Math.abs(R.y+1.5-p.y)<2.4){p.got=true;R.got++;R.score+=beach?60:80;sfx('pick')}}R.pick=R.pick.filter(p=>p.rx>-20&&!p.got);
  if(R.dist>=R.len){const n=R.got;R.score+=500+n*20;if(beach)finish(true,R.score,n>=35?3:n>=22?2:1,`You reached Danny at the pier with ${n} shells!`);else finish(true,R.score,n>=40?3:n>=25?2:1,`You flew across the moon with ${n} stars!`)}}
-function drawRun(){const R=G,beach=R.kind==='beach',gy=groundY(),X0=W*.3;g.save();if(R.shake>0)g.translate(rnd(-4,4),rnd(-3,3));
+function drawRun(){if(G.kind==='beach')return drawBeach();const R=G,beach=R.kind==='beach',gy=groundY(),X0=W*.3;g.save();if(R.shake>0)g.translate(rnd(-4,4),rnd(-3,3));
  if(beach){sunset(0,gy-40*S,gy-120*S,R.t);g.fillStyle='#2b7fb0';g.fillRect(0,gy-60*S,W,40*S);g.fillStyle='rgba(255,255,255,.5)';for(let x=-(R.dist*RPM()*.3)%(60*S);x<W;x+=60*S)g.fillRect(x,gy-48*S,26*S,3*S);
   g.fillStyle='#3fa6d0';g.fillRect(0,gy-22*S,W,22*S);g.fillStyle='#f0d9a0';g.fillRect(0,gy,W,H-gy);g.fillStyle='#e6c888';g.fillRect(0,gy,W,8*S);
   const pierX=(R.len-R.dist)*RPM()+X0;if(pierX<W+200){g.fillStyle='#6b4a2e';g.fillRect(pierX,gy-70*S,W,14*S);for(let k=0;k<8;k++)g.fillRect(pierX+k*40*S,gy-70*S,8*S,70*S);drawDanny(pierX+40*S,gy-70*S,S*1.3,'ranch')}}
@@ -543,6 +543,214 @@ function drawRhythm(){const R=G,Y=rhythmLay(),now=rClock();
  for(const f of R.fx){const i=DIRS.indexOf(f.d);txt(f.s,Y.lx(i)+Y.bw/2,Y.hitY-40*S-f.t*40*S,fs(17),`rgba(255,255,255,${1-f.t/.7})`,null,true,'rgba(0,0,0,.6)')}
  if(R.combo>2)txt(`${R.combo} combo!`,W/2,top-6*S,fs(20),'#ffe14a',null,true,'rgba(0,0,0,.6)');
  const c=rClock();if(c<4*R.spb*2&&c>0){const beat=Math.floor(c/(R.spb*2));txt(['4','3','2','1'][Math.min(3,beat)]||'',W/2,(top+Y.hitY)/2,fs(60),'rgba(255,255,255,.8)',null,true)}}
+
+// ================= BEACH GALLOP engine (level 3) — v4 rework =================
+// Fixed-step physics (1/120 s) with render interpolation, keyed gallop cycle, a seeded hand-checked course,
+// fair hurtboxes, safe shell placement, hearts + mid checkpoint, combos, boost horseshoes and two set pieces.
+const BJ={v:18,g:40,dj:13,buf:.15,phw:.7,step:1/120,base:12,steer:4,boost:5,hurtSpd:9,len:1000};
+const BSPEED={min:8,max:21};                 // slowest (steer left) to fastest (steer right + boost)
+const BMOV={ball:{act:26,v:5},gull:{act:30,v:7}};
+const EXCL=7.5;                               // ground shells keep this far (plus hurt half-width) from a hazard
+const HSZ={log:[2.2,1.6],wave:[3.2,2.6],big:[3.6,2.9],dlog:[7.2,1.6],crab:[1.4,1.4],ball:[1.6,1.6],gull:[2,.7]};
+function bHurt(o){ // hurt box for hazard o in its current state: hurt when |rx|<hw && player feet y < top
+ const k=o.k;
+ if(k==='dlog')return{hw:2.5+2.2*.4+BJ.phw,top:1.6*.85};
+ if(k==='ball')return{hw:.8*.8+BJ.phw,top:(o.yb+1.6)*.85};
+ if(k==='gull')return o.yb<1.3?{hw:2*.4+BJ.phw,top:(o.yb+.7)*.85}:{hw:0,top:0};
+ const z=HSZ[k];if(k==='wave'||k==='big')return{hw:z[0]*.35+BJ.phw,top:z[1]*.75}; // water is soft: a little extra forgiveness
+ return{hw:z[0]*.4+BJ.phw,top:z[1]*.85}}
+function bMeetRange(o){ // course positions where the player can meet hazard o, over every reachable speed
+ if(o.k==='crab')return[o.d0-1.2,o.d0+1.2];
+ const m=BMOV[o.k];if(!m)return[o.d0,o.d0];
+ return[o.d0-m.v*m.act/(BSPEED.min+m.v),o.d0-m.v*m.act/(BSPEED.max+m.v)]}
+function bMaxHw(o){const k=o.k;if(k==='gull')return 2*.4+BJ.phw;if(k==='ball')return .8*.8+BJ.phw;return bHurt(o).hw}
+function shellSafe(d,haz){for(const o of haz){const [a,b]=bMeetRange(o),hw=bMaxHw(o);if(d>a-hw-EXCL&&d<b+hw+EXCL)return false}return true}
+function bArcY(dx,spd){const t=BJ.v/BJ.g+dx/spd;return Math.max(0,BJ.v*t-BJ.g*t*t/2)} // ideal jump height dx units from its peak
+function beachCourse(){const r=srand(1985),len=BJ.len,haz=[],shells=[],shoes=[],ev={};let d=42,n=0;
+ const add=(k,d0,extra)=>{const o=Object.assign({k,d0,cd:d0,w:HSZ[k][0],h:HSZ[k][1],yb:k==='gull'?11:0,up:0,act:false,at:0,ph:r()*6,hit:false,cleared:false},extra||{});haz.push(o);return o};
+ const arc=(c,big)=>{for(const dx of[-3,-1.5,0,1.5,3])shells.push({d:c+dx,y:bArcY(dx,12)+1.5,arc:true,got:false})};
+ const cp=len*.5;let cpDone=false,surf=false,flock=false;
+ while(d<len-60){const p=d/len;
+  if(!surf&&p>.64){surf=true;ev.surf=d-40;for(let i=0;i<3;i++){add('big',d+i*17);arc(d+i*17,true)}d+=34+30;continue}
+  if(!flock&&p>.83){flock=true;ev.flock=d-45;for(let i=0;i<3;i++)add('gull',d+i*18);d+=36+32;continue}
+  if(!cpDone&&d>cp){cpDone=true;ev.cp=d-14;d+=14}
+  const pool=p<.18?['log','wave','log','crab']:p<.4?['log','wave','crab','ball','gull','crab']:['log','wave','crab','ball','gull','dlog','crab','dlog'];
+  let k=pool[Math.floor(r()*pool.length)];if(n===0)k='log';if(!ev.dlog&&k==='dlog')ev.dlog=d-40;
+  if(!ev.gull&&k==='gull')ev.gull=d-38;if(!ev.ball&&k==='ball')ev.ball=d-34;
+  add(k,d);if((k==='log'||k==='wave')&&r()<.55)arc(d);n++;
+  d+=(p<.5?24:21)+r()*8+(k==='dlog'?6:0)+(k==='gull'||k==='ball'?6:0)}
+ haz.sort((a,b)=>a.d0-b.d0);
+ // ground shell trails in the safe gaps, and boost horseshoes at ~30/58/88%
+ const shoeAt=[.3,.58,.88].map(f=>f*len);
+ for(let x=20;x<len-30;x+=2.2){if(!shellSafe(x,haz))continue;if(shellSafe(x-2.2,haz)&&shellSafe(x+2.2,haz)&&shellSafe(x+4.4,haz)){ // run of >=3 safe spots
+   const si=shoeAt.findIndex(s=>s>0&&x>s);if(si>=0){shoes.push({d:x+2.2,got:false});shoeAt[si]=-1;x+=8;continue}
+   if(r()<.62){for(let k=0;k<3;k++)shells.push({d:x+k*2.2,y:.8,arc:false,got:false})}x+=4.4+2.2*Math.floor(r()*4)}}
+ shells.sort((a,b)=>a.d-b.d);return{haz,shells,shoes,ev,cp:ev.cp||cp}}
+const BCOURSE_TOTAL=beachCourse().shells.length;
+(function(){const lv=LEVELS.find(l=>l.id==='beach');if(lv){const a=Math.ceil(BCOURSE_TOTAL*.75),b=Math.ceil(BCOURSE_TOTAL*.5);
+ lv.goal=['Ride your horse along the surf at sunset.','Jump logs, waves, crabs, beach balls and swooping gulls.','Grab shells for combos and reach Danny at the pier.'];
+ lv.how='Tap JUMP (or swipe up). Tap again in the air to double jump. Swipe right to gallop faster.';lv.stars=`3★ ${a}+ shells · 2★ ${b}+ shells`}})();
+// particles & floating text: fixed pools, no per-frame allocation
+const BP=[];for(let i=0;i<160;i++)BP.push({on:false,d:0,y:0,vx:0,vy:0,life:0,max:1,c:'#fff',r:1,gv:0});
+const BF=[];for(let i=0;i<10;i++)BF.push({on:false,d:0,y:0,t:0,s:'',c:'#fff'});
+function bPart(d,y,vx,vy,life,c,r,gv){for(const p of BP)if(!p.on){p.on=true;p.d=d;p.y=y;p.vx=vx;p.vy=vy;p.life=p.max=life;p.c=c;p.r=r;p.gv=gv==null?-14:gv;return}}
+function bFloat(d,y,s,c){let o=BF[0];for(const f of BF)if(f.on&&f.t>.75){o=f;break}if(!(o.on&&o.t>.75))for(const f of BF)if(!f.on){o=f;break}o.on=true;o.d=d;o.y=y;o.t=1;o.s=s;o.c=c||'#fff'}
+function mkBeach(){for(const p of BP)p.on=false;for(const f of BF)f.on=false;const C=beachCourse();
+ return{eng:'run',kind:'beach',t:0,score:0,dist:0,pDist:0,speed:11,y:0,pY:0,vy:0,air:false,dj:false,jb:0,ab:0,land:0,hit:0,hearts:3,shake:0,
+  hi:0,si:0,haz:C.haz,shells:C.shells,shoes:C.shoes,ev:C.ev,cp:C.cp,cpPassed:false,snap:null,got:0,total:C.shells.length,combo:0,best:0,mult:1,boost:0,cleared:0,
+  ph:0,acc:0,alpha:0,respawn:0,len:BJ.len,msg:'',msgT:0,fly:false,obs:[],pick:[],seen:{},sim:false,hits:0,missed:0}}
+function bSay(R,m,t){if(R.sim)return;R.bm=m;R.bmT=t||2.2}
+function bSfx(R,n){if(!R.sim)sfx(n)}
+function bHurtPlayer(R,o){o.hit=true;R.hits++;R.hit=1.1;R.hearts--;R.combo=0;R.mult=1;R.shake=.35;R.score=Math.max(0,R.score-100);bSfx(R,'hit');
+ if(!R.sim){const c=o.k==='wave'||o.k==='big'?'#bfe8ff':o.k==='gull'?'#fff':'#e9d29a';for(let i=0;i<14;i++)bPart(R.dist+rnd(-.5,1.5),rnd(1,4),rnd(-4,8),rnd(2,9),rnd(.4,.8),c,rnd(1.5,3.5))}
+ const m={log:'Oof! Jump the logs!',dlog:'Double log! Jump, then tap again in the air!',wave:'Splash! Jump the waves!',big:'Wipeout! Time each big wave!',crab:'Pinch! Hop over the crabs!',ball:'Bonk! Jump the beach balls!',gull:'Squawk! Jump the swooping gulls!'}[o.k];
+ if(R.hearts<=0){R.respawn=1.4;bSay(R,'Whoa there! Back to the '+(R.cpPassed?'checkpoint':'start')+'.',2)}else bSay(R,m,1.4)}
+function bRespawn(R){R.respawns=(R.respawns||0)+1;const back=R.cpPassed?R.cp:0,s=R.snap;R.dist=R.pDist=Math.max(0,back-4);R.y=R.pY=0;R.vy=0;R.air=false;R.dj=false;R.hearts=(R.respawns>=3?5:R.respawns>=2?4:3);R.hit=1.2;R.boost=0;R.speed=10;R.combo=0;R.mult=1;
+ if(s){R.score=s.score;R.got=s.got}else{R.score=0;R.got=0}
+ for(const o of R.haz)if(o.d0>back-4){o.hit=false;o.cleared=false;o.act=false;o.at=0;o.up=0;o.cd=o.d0;o.yb=o.k==='gull'?11:0}
+ for(const p of R.shells)if(p.d>back-4)p.got=false;for(const p of R.shoes)if(p.d>back-4)p.got=false;R.hi=0;R.si=0}
+function bStep(R,dt,st){ // one fixed physics step
+ R.t+=dt;if(R.msgT>0)R.msgT-=dt;if(R.shake>0)R.shake-=dt;if(R.land>0)R.land-=dt;
+ if(R.respawn>0){R.respawn-=dt;if(R.respawn<=.7&&R.respawn+dt>.7)bRespawn(R);R.pDist=R.dist;R.pY=R.y;return}
+ R.pDist=R.dist;R.pY=R.y;
+ let target=BJ.base+st.x*BJ.steer+(R.boost>0?BJ.boost:0);if(R.hit>0){R.hit-=dt;target=Math.min(target,BJ.hurtSpd)}if(R.boost>0)R.boost-=dt;
+ R.speed+=(target-R.speed)*(1-Math.exp(-2.2*dt));R.dist+=R.speed*dt;R.ph=(R.ph+R.speed*dt/9.5)%1;R.score+=dt*5;
+ // jump (buffered), double jump once per jump, analytic-quality semi-implicit integration at a fixed step
+ if(R.jb>0){if(!R.air){R.jb=0;R.vy=BJ.v;R.air=true;R.dj=false;bSfx(R,'jump');if(!R.sim)for(let i=0;i<6;i++)bPart(R.dist-1,0,rnd(-6,-2),rnd(1,4),.5,'#e6c888',rnd(2,4),-10)}
+  else if(!R.dj&&R.y>1){R.jb=0;R.dj=true;R.vy=Math.max(R.vy,BJ.dj);bSfx(R,'jump');if(!R.sim)for(let i=0;i<8;i++)bPart(R.dist,R.y+1,rnd(-5,2),rnd(-4,2),.45,'#fff6c0',rnd(1.5,3),0)}
+  else R.jb-=dt}
+ if(R.air){R.vy-=BJ.g*dt;R.y+=R.vy*dt;if(R.y<=0){R.y=0;R.vy=0;R.air=false;R.dj=false;R.land=.2;if(!R.sim)for(let i=0;i<8;i++)bPart(R.dist+rnd(-2,1),0,rnd(-7,-1),rnd(1,5),.5,'#e6c888',rnd(2,4),-12)}}
+ R.ab+=((R.air?1:0)-R.ab)*(1-Math.exp(-14*dt));
+ // hazards
+ while(R.hi<R.haz.length&&R.haz[R.hi].cd-R.dist<-14)R.hi++;
+ for(let i=R.hi;i<R.haz.length;i++){const o=R.haz[i];const rx0=o.d0-R.dist;if(rx0>90)break;
+  if(o.k==='crab')o.cd=o.d0+1.2*Math.sin(R.t*2.2+o.ph);
+  else if(o.k==='ball'){if(!o.act&&rx0<BMOV.ball.act){o.act=true;bSfx(R,'click')}if(o.act){o.at+=dt;o.cd-=BMOV.ball.v*dt;o.yb=1.0*Math.abs(Math.sin(Math.PI*o.at/.55))}}
+  else if(o.k==='gull'){if(!o.act){o.yb=11;if(rx0<BMOV.gull.act){o.act=true;bSfx(R,'ring')}}if(o.act){o.at+=dt;o.cd-=BMOV.gull.v*dt;const u=Math.min(1,o.at/.9);if(o.cd-R.dist<-4)o.up+=dt*14;o.yb=Math.min(11,11+(0.9-11)*(1-(1-u)*(1-u)*(1-u))+o.up)}}
+  const rx=o.cd-R.dist,hb=bHurt(o);
+  if(!o.hit&&!o.cleared&&R.hit<=0&&hb.hw>0&&Math.abs(rx)<hb.hw&&R.y<hb.top)bHurtPlayer(R,o);
+  if(!o.hit&&!o.cleared&&rx<-hb.hw-.5&&(o.k!=='gull'||o.yb<1.3)){o.cleared=true;R.cleared++;R.score+=25;if(o.k==='big'&&!R.sim){R.shake=Math.max(R.shake,.18);for(let j=0;j<16;j++)bPart(o.cd+rnd(-1,1),rnd(1,3),rnd(-3,3),rnd(4,11),rnd(.5,.9),'#dff4ff',rnd(2,4))}}
+  if((o.k==='wave'||o.k==='big')&&!R.sim&&Math.abs(rx)<6&&Math.random()<dt*20)bPart(o.cd+rnd(-1,1),o.h*rnd(.6,1),rnd(-2,2),rnd(2,6),.5,'#ffffff',rnd(1.5,3))}
+ // shells (combo multiplier for consecutive shells), horseshoe boosts
+ while(R.si<R.shells.length&&R.shells[R.si].d-R.dist<-3){const p=R.shells[R.si];if(!p.got){R.missed++;if(R.combo>0){R.combo=0;R.mult=1}}R.si++}
+ for(let i=R.si;i<R.shells.length;i++){const p=R.shells[i],rx=p.d-R.dist;if(rx>2)break;
+  if(!p.got&&Math.abs(rx)<1.6&&Math.abs(R.y+1.5-p.y)<2.4){p.got=true;R.got++;R.combo++;R.best=Math.max(R.best,R.combo);R.mult=Math.min(5,1+Math.floor(R.combo/5));const pts=10*R.mult;R.score+=pts;bSfx(R,'pick');
+   if(!R.sim){bFloat(p.d,p.y+1,R.mult>1?`+${pts} x${R.mult}`:`+${pts}`,R.mult>1?'#ffe14a':'#fff');for(let j=0;j<5;j++)bPart(p.d,p.y,rnd(-3,3),rnd(-1,5),.4,'#ffd0f0',rnd(1,2.5),0)}
+   if(R.combo===5||R.combo===10||R.combo===15||R.combo===20)bSay(R,`Shell combo x${R.mult}! Keep it going!`,1.3)}}
+ for(const p of R.shoes){const rx=p.d-R.dist;if(!p.got&&Math.abs(rx)<1.6&&R.y<3.5){p.got=true;R.boost=3;R.score+=150;bSfx(R,'boost');bSay(R,'🐎 Golden horseshoe! Gallop boost!',1.5);if(!R.sim)bFloat(p.d,2.5,'BOOST!','#ffe14a')}}
+ // events
+ const E=R.ev,cross=x=>x!=null&&R.pDist<x&&R.dist>=x;
+ if(cross(E.dlog))bSay(R,'Double logs! Jump, then tap again in the air.',2.6);
+ if(cross(E.ball))bSay(R,'Beach balls bouncing in! Jump them.',2);
+ if(cross(E.gull))bSay(R,'Seagull swooping low! Jump it!',2);
+ if(cross(E.surf)){bSay(R,"🌊 SURF'S UP! Three big waves!",2.4);bSfx(R,'boost');R.shake=.25}
+ if(cross(E.flock)){bSay(R,'🐦 Gull squadron incoming! Jump each one!',2.4);bSfx(R,'ring')}
+ if(!R.cpPassed&&R.dist>=R.cp){R.cpPassed=true;R.hearts=Math.min(3,R.hearts+1);R.snap={score:R.score,got:R.got};bSfx(R,'star');bSay(R,'🚩 Checkpoint! +1 heart.',2.2)}}
+function upBeach(R,dt){if(R.msgT>0&&R.msg){R.bm=R.msg;R.bmT=R.msgT;R.msg='';R.msgT=0}if(R.bmT>0)R.bmT-=dt;
+if(R.rawDt&&!(window.__QA&&window.__QA.speed))dt=R.rawDt; // real elapsed time (fixed steps catch up), so slow phones don't slow the gallop
+const st=steer();let sw=popSwipe();while(sw){if(sw==='U')ACT.a=true;sw=popSwipe()}
+ if(pressed('a'))R.jb=BJ.buf;R.acc=Math.min(R.acc+dt,.12);
+ while(R.acc>=BJ.step){bStep(R,BJ.step,st);R.acc-=BJ.step;if(R.dist>=R.len)break}R.alpha=R.acc/BJ.step;
+ for(const p of BP)if(p.on){p.life-=dt;if(p.life<=0){p.on=false;continue}p.d+=p.vx*dt;p.vy+=p.gv*dt;p.y=Math.max(0,p.y+p.vy*dt)}
+ for(const f of BF)if(f.on){f.t-=dt*1.1;f.y+=dt*2.2;if(f.t<=0)f.on=false}
+ if(R.dist>=R.len){const n=R.got,a=Math.ceil(R.total*.75),b=Math.ceil(R.total*.5);R.score+=500+n*10+R.hearts*100+R.best*5;
+  finish(true,R.score,n>=a?3:n>=b?2:1,`You reached Danny at the pier with ${n} of ${R.total} shells! Best combo ${R.best}.`)}}
+// ---------- drawing ----------
+let BBG=null;function beachBG(gy){const key=W+'x'+H+'x'+DPR+'x'+S+'x'+gy;if(BBG&&BBG.key===key)return BBG.c; // sky + sun cached once per size
+ const c=document.createElement('canvas');c.width=Math.ceil(W*DPR);c.height=Math.ceil((gy+2)*DPR);const x=c.getContext('2d');x.setTransform(DPR,0,0,DPR,0,0);
+ const y1=gy-40*S,sunY=gy-120*S,gr=x.createLinearGradient(0,0,0,y1);gr.addColorStop(0,'#2a1a6e');gr.addColorStop(.45,'#c2409a');gr.addColorStop(.8,'#ff8a5a');gr.addColorStop(1,'#ffd27a');x.fillStyle=gr;x.fillRect(0,0,W,y1);
+ const r=Math.min(W*.22,90*S),sg=x.createLinearGradient(0,sunY-r,0,sunY+r);sg.addColorStop(0,'#fff27a');sg.addColorStop(1,'#ff4f8a');x.fillStyle=sg;x.beginPath();x.arc(W/2,sunY,r,0,TAU);x.fill();
+ x.fillStyle='#c2409a';for(let k=0;k<6;k++){const yy=sunY+k*r*.17,h=1.5+k*1.4;x.fillRect(W/2-r,yy,r*2,h*S)}BBG={key,c};return c}
+// gallop key poses per leg cycle u (0 = touchdown): upper angle (+ swings the hoof back) and knee fold
+const GK=[[0,-.5,.05],[.25,0,0],[.45,.6,.25],[.62,.35,1.3],[.82,-.45,.6],[1,-.5,.05]];
+function gk(u){u=(u%1+1)%1;for(let i=0;i<GK.length-1;i++){const a=GK[i],b=GK[i+1];if(u<=b[0]){const t=(u-a[0])/(b[0]-a[0]),e=(1-Math.cos(t*Math.PI))/2;return[a[1]+(b[1]-a[1])*e,a[2]+(b[2]-a[2])*e]}}return[GK[0][1],GK[0][2]]}
+function steedLeg(lx,ly,s,c,u,fore,ab,col,hoof){const [ua,kb]=gk(c-u);const airU=fore?-.95:.7,airK=fore?1.7:1.3;const A=ua+(airU-ua)*ab,K=(kb+(airK-kb)*ab)*(fore?1:-1);
+ g.save();g.translate(lx*s,ly*s);g.rotate(A);g.fillStyle=col;rr(-3*s,-2*s,6*s,17*s,2.6*s);g.fill();g.translate(0,14*s);g.rotate(K);rr(-2.3*s,0,4.6*s,15*s,2*s);g.fill();g.fillStyle=hoof;g.fillRect(-2.7*s,13*s,5.4*s,3.2*s);g.restore()}
+function steedPose(R){const c=R.ph,ab=R.ab,bob=(1-ab)*(-2.2*(.5+.5*Math.cos(TAU*(c-.72))))+(R.land>0?2.6*Math.sin(Math.PI*(R.land/.2)):0),pitch=(1-ab)*.035*Math.sin(TAU*c)-ab*.06*(R.vy/BJ.v);return{c,ab,bob,pitch}}
+function drawSteedBack(x,y,s,P,col,dark,mane){g.save();g.translate(x,y);
+ ell(0,2*s,30*s,4*s,'rgba(0,0,0,.22)');g.translate(0,P.bob*s);g.rotate(P.pitch);
+ steedLeg(-15,-31,s,P.c,.08,false,P.ab,dark,'#1a1a1a');steedLeg(17,-33,s,P.c,.36,true,P.ab,dark,'#1a1a1a');
+ g.save();g.translate(-25*s,-41*s);g.rotate(.55+Math.sin(TAU*P.c)*.22-P.ab*.35);ell(-5*s,8*s,4.5*s,13*s,mane,.25);ell(-3*s,15*s,3*s,8*s,mane,.1);g.restore();
+ ell(0,-37*s,25*s,11.5*s,col);ell(-15*s,-38*s,11*s,11*s,col);ell(15*s,-39*s,11*s,11*s,col);g.fillStyle='rgba(255,255,255,.08)';ell(2*s,-43*s,18*s,3*s,'rgba(255,255,255,.1)');
+ steedLeg(-12,-31,s,P.c,0,false,P.ab,col,'#222');steedLeg(20,-33,s,P.c,.28,true,P.ab,col,'#222');
+ g.fillStyle='#5a2a14';rr(-8*s,-50*s,18*s,6*s,2.5*s);g.fill();g.fillStyle='#7a3a1c';rr(-9*s,-51*s,5*s,4*s,2*s);g.fill();rr(7*s,-52*s,4*s,5*s,2*s);g.fill();
+ g.fillStyle='#3a1e0c';g.fillRect(-2*s,-45*s,3*s,12*s);g.restore()}
+function drawSteedFront(x,y,s,P,col,mane){g.save();g.translate(x,y+P.bob*s);g.rotate(P.pitch);
+ const nod=Math.sin(TAU*P.c)*.07*(1-P.ab)-P.ab*.12;g.translate(18*s,-44*s);g.rotate(nod);g.translate(-18*s,44*s);
+ // neck
+ g.fillStyle=col;g.beginPath();g.moveTo(10*s,-46*s);g.quadraticCurveTo(22*s,-64*s,31*s,-73*s);g.lineTo(40*s,-66*s);g.quadraticCurveTo(34*s,-50*s,30*s,-32*s);g.lineTo(16*s,-30*s);g.closePath();g.fill();
+ // head
+ g.save();g.translate(35*s,-70*s);g.rotate(.62);rr(-6*s,-7*s,26*s,13*s,6*s);g.fill();ell(20*s,1*s,6.5*s,6*s,'#6e3e22');circ(21.5*s,-.5*s,1.2*s,'#2a140a');
+ g.fillStyle='#f3e6d0';g.beginPath();g.moveTo(2*s,-6.5*s);g.lineTo(14*s,-5*s);g.lineTo(19*s,-3*s);g.lineTo(13*s,-3.6*s);g.closePath();g.fill(); // blaze
+ circ(5*s,-2*s,2.2*s,'#1a0e08');circ(5.6*s,-2.6*s,.7*s,'#fff');
+ g.strokeStyle='#2a140a';g.lineWidth=1.4*s;g.beginPath();g.moveTo(14*s,-6.5*s);g.lineTo(14*s,6*s);g.moveTo(-1*s,-6.5*s);g.lineTo(12*s,4.5*s);g.stroke(); // bridle
+ circ(15*s,4*s,1.6*s,'#c9c9c9');g.restore();
+ // ears + forelock
+ g.fillStyle=col;for(const [ex,er] of [[31,-.35],[35,-.15]]){g.save();g.translate(ex*s,-74*s);g.rotate(er);g.beginPath();g.moveTo(-2.4*s,1*s);g.lineTo(0,-8*s);g.lineTo(2.4*s,1*s);g.closePath();g.fill();g.restore()}
+ g.fillStyle='#5a3018';g.save();g.translate(35*s,-74*s);g.rotate(-.15);g.beginPath();g.moveTo(-1*s,0);g.lineTo(0,-5*s);g.lineTo(1*s,0);g.fill();g.restore();
+ ell(36*s,-71*s,3*s,4*s,mane,.6);
+ // mane along the crest, flowing back with the gallop
+ for(let k=0;k<6;k++){const t=k/5*.62,mx=31-t*21,my=-72+t*25,fl=Math.sin(TAU*P.c*1+k*.8)*1.2;ell((mx-2.5)*s,(my+fl)*s,3.6*s,2.8*s,mane,.7)}
+ g.restore()}
+function drawBeach(){const R=G,gy=groundY(),X0=W*.3,a=R.alpha||0,dist=R.pDist+(R.dist-R.pDist)*a,py=R.pY+(R.y-R.pY)*a,U=RPM();
+ g.save();if(R.shake>0){const m=R.shake/.35;g.translate(Math.sin(R.t*71)*5*m*S,Math.cos(R.t*53)*3.5*m*S)}
+ const bg=beachBG(gy);g.drawImage(bg,0,0,bg.width/DPR,bg.height/DPR);
+ // sea bands + parallax foam and sailboats
+ const surfOn=R.ev.surf!=null&&dist>R.ev.surf&&dist<R.ev.surf+110;g.fillStyle=surfOn?'#1f6a9c':'#2b7fb0';g.fillRect(0,gy-60*S,W,40*S);
+ g.fillStyle='rgba(255,255,255,.5)';const fo=(dist*U*.3)%(60*S);for(let x=-fo;x<W;x+=60*S)g.fillRect(x,gy-48*S,26*S,3*S);
+ const bo=(dist*U*.08)%(W*.9);for(let k=0;k<2;k++){const sx=W-((bo+k*W*.45)%(W*1.1))+40*S,sy=gy-58*S;g.fillStyle='#fff6e0';g.beginPath();g.moveTo(sx,sy);g.lineTo(sx,sy-18*S);g.lineTo(sx+12*S,sy);g.fill();g.fillStyle='#6b4a2e';g.fillRect(sx-8*S,sy,22*S,3*S)}
+ g.fillStyle='#3fa6d0';g.fillRect(0,gy-22*S,W,22*S);g.fillStyle='rgba(255,255,255,.35)';const so=(dist*U*.6)%(80*S);for(let x=-so;x<W;x+=80*S)g.fillRect(x,gy-8*S,34*S,2*S);
+ g.fillStyle='#f0d9a0';g.fillRect(0,gy,W,H-gy);g.fillStyle='#e6c888';g.fillRect(0,gy,W,8*S);g.fillStyle='rgba(160,120,70,.35)';const po=(dist*U)%(47*S);for(let x=-po;x<W;x+=47*S){g.fillRect(x,gy+14*S,4*S,2*S);g.fillRect(x+21*S,gy+26*S,3*S,2*S)}
+ const pierX=(R.len-dist)*U+X0;if(pierX<W+200){g.fillStyle='#6b4a2e';g.fillRect(pierX,gy-70*S,W,14*S);for(let k=0;k<8;k++)g.fillRect(pierX+k*40*S,gy-70*S,8*S,70*S);drawDanny(pierX+40*S,gy-70*S,S*1.3,'ranch')}
+ // checkpoint lifeguard tower
+ const cx=(R.cp-dist)*U+X0;if(cx>-80*S&&cx<W+80*S){g.fillStyle='#e8e0d0';g.fillRect(cx-16*S,gy-62*S,32*S,6*S);g.fillStyle='#c84a3a';g.fillRect(cx-18*S,gy-80*S,36*S,18*S);g.fillStyle='#fff';txt('🚩',cx,gy-84*S,fs(16),'#fff');
+  g.fillStyle='#8a6a4a';g.fillRect(cx-14*S,gy-56*S,4*S,56*S);g.fillRect(cx+10*S,gy-56*S,4*S,56*S);g.fillRect(cx-14*S,gy-30*S,28*S,3*S);
+  g.fillStyle='#ddd';g.fillRect(cx+20*S,gy-104*S,3*S,104*S);g.fillStyle=R.cpPassed?'#2ecc71':'#ff4f6a';const fy=R.cpPassed?gy-104*S:gy-60*S;g.beginPath();g.moveTo(cx+23*S,fy);g.lineTo(cx+44*S,fy+7*S+Math.sin(R.t*8)*2*S);g.lineTo(cx+23*S,fy+14*S);g.fill();txt('CHECKPOINT',cx,gy+22*S,fs(16),'#7a3a1c')}
+ // hazards (interpolated scroll; moving hazards use their own current position)
+ for(let i=R.hi;i<R.haz.length;i++){const o=R.haz[i];if(o.d0-dist>W/U)break;const x=X0+(o.cd-dist)*U;if(x<-80*S)continue;drawBHaz(o,x,gy,U,R)}
+ // shells, horseshoes
+ for(let i=R.si;i<R.shells.length;i++){const p=R.shells[i];const x=X0+(p.d-dist)*U;if(x>W+20)break;if(p.got||x<-20)continue;const y=gy-p.y*U-6*S;
+  if(p.arc){g.fillStyle='rgba(255,240,180,.35)';g.beginPath();g.arc(x,y-1*S,13*S,0,TAU);g.fill()}
+  g.fillStyle='#ffd0c0';g.beginPath();g.arc(x,y,9*S,Math.PI,0);g.lineTo(x,y+6*S);g.fill();g.strokeStyle='#e89a8a';g.lineWidth=1.5;g.beginPath();for(let k=-2;k<=2;k++){g.moveTo(x,y+5*S);g.lineTo(x+k*4*S,y-7*S)}g.stroke()}
+ for(const p of R.shoes){if(p.got)continue;const x=X0+(p.d-dist)*U;if(x<-30||x>W+30)continue;const y=gy-22*S-Math.sin(R.t*4)*3*S;circ(x,y,16*S,`rgba(255,225,74,${.25+.15*Math.sin(R.t*6)})`);
+  g.strokeStyle='#ffcc22';g.lineWidth=5*S;g.lineCap='round';g.beginPath();g.arc(x,y-1*S,8*S,Math.PI*.15,Math.PI*.85,true);g.stroke();g.lineCap='butt';circ(x-6*S,y+4*S,1.5*S,'#a07010');circ(x+6*S,y+4*S,1.5*S,'#a07010')}
+ // horse + rider (rider sits in the saddle; neck and head are drawn in front of her)
+ const P=steedPose(R),hs=S*1.45,hx=X0,hyy=gy-py*U,blink=R.hit>0?.5+.5*Math.cos(R.t*26):1;
+ g.globalAlpha=blink;if(R.boost>0){for(let k=1;k<4;k++){g.globalAlpha=blink*.12*(4-k);drawSteedBack(hx-k*14*S,hyy,hs,P,'#ffd27a','#e0b050','#a07010')}g.globalAlpha=blink}
+ drawSteedBack(hx,hyy,hs,P,'#8a5230','#6e3e22','#2a1a10');
+ const cpp=Math.cos(P.pitch),spp=Math.sin(P.pitch),sx=(0*cpp+46*spp)*hs,sy=(0*spp-46*cpp)*hs+P.bob*hs;const sm=S*1.27,lean=.04+P.ab*.1;const mx=hx+sx-2*sm+0,my=hyy+sy+30*sm+(1-P.ab)*.8*S*Math.sin(TAU*(P.c-.1));
+ drawMel(mx,my,sm,'beach',{pose:'saddle',noShadow:true,wind:4,lean});
+ drawSteedFront(hx,hyy,hs,P,'#8a5230','#2a1a10');
+ // reins from her hands to the bit
+ {const hipX=mx,hipY=my-30*sm,shx=mx+8*sm,shy=my-50*sm+1.5*sm;let hxp=shx+Math.sin(.95)*18.5*sm,hyp=shy+Math.cos(.95)*18.5*sm;const dx=hxp-hipX,dy=hyp-hipY,cl=Math.cos(lean),sl=Math.sin(lean);hxp=hipX+dx*cl-dy*sl;hyp=hipY+dx*sl+dy*cl;
+  const nod=Math.sin(TAU*P.c)*.07*(1-P.ab)-P.ab*.12;const bl=[35+15*Math.cos(.62)-4*Math.sin(.62),-70+15*Math.sin(.62)+4*Math.cos(.62)];const dx2=bl[0]-18,dy2=bl[1]+44,cn=Math.cos(nod),sn=Math.sin(nod);const bxl=18+dx2*cn-dy2*sn,byl=-44+dx2*sn+dy2*cn;
+  const cp=Math.cos(P.pitch),sp=Math.sin(P.pitch);const bx=hx+(bxl*cp-byl*sp)*hs,by=hyy+(bxl*sp+byl*cp)*hs+P.bob*hs;
+  g.strokeStyle='#3a1e0c';g.lineWidth=1.8*S;g.beginPath();g.moveTo(hxp,hyp);g.quadraticCurveTo((hxp+bx)/2,Math.max(hyp,by)+5*S,bx,by);g.stroke();circ(hxp,hyp,2.8*sm,SKIN)}
+ g.globalAlpha=1;
+ // particles, floating text
+ for(const p of BP)if(p.on){g.globalAlpha=Math.max(0,p.life/p.max);circ(X0+(p.d-dist)*U,gy-p.y*U,p.r*S,p.c)}g.globalAlpha=1;
+ for(const f of BF)if(f.on){g.globalAlpha=Math.min(1,f.t*2);txt(f.s,X0+(f.d-dist)*U,gy-f.y*U-14*S,fs(17),f.c,null,true,'rgba(0,0,0,.55)')}g.globalAlpha=1;
+ // off-screen warning for incoming gulls / balls
+ for(let i=R.hi;i<R.haz.length;i++){const o=R.haz[i];if(o.d0-dist>60)break;if((o.k==='gull'||o.k==='ball')&&o.act&&X0+(o.cd-dist)*U>W-10){const y=o.k==='gull'?gy-40*S:gy-20*S;circ(W-24*S,y,15*S,'rgba(255,60,90,.85)');txt('!',W-24*S,y+7*S,fs(20),'#fff',null,true)}}
+ g.restore();
+ // HUD: progress, shells, hearts, combo, boost
+ const w=Math.min(W-40,300*S),bx=(W-w)/2,by=HUDH()+8*S;g.fillStyle='rgba(0,0,0,.55)';rr(bx,by,w,26*S,13*S);g.fill();g.fillStyle='#ffb03a';rr(bx+3,by+3,Math.max(10,(w-6)*Math.min(1,dist/R.len)),26*S-6,10*S);g.fill();
+ const cpx=bx+3+(w-6)*R.cp/R.len;g.fillStyle=R.cpPassed?'#2ecc71':'#fff';g.fillRect(cpx-1.5,by+2,3,26*S-4);txt(`🐚 ${R.got}/${R.total}`,bx+w/2,by+19*S,fs(16),'#fff');
+ const y2=by+32*S;g.fillStyle='rgba(0,0,0,.45)';rr(bx,y2,w,26*S,13*S);g.fill();txt('❤️'.repeat(Math.max(0,R.hearts))+'🤍'.repeat(Math.max(0,3-R.hearts)),bx+10*S,y2+19*S,fs(16),'#fff','left');
+ txt(R.boost>0?`⚡ BOOST ${R.boost.toFixed(1)}`:(R.combo>0?`Combo ${R.combo} · x${R.mult}`:''),bx+w-10*S,y2+19*S,fs(16),R.boost>0?'#ffe14a':(R.mult>1?'#ffe14a':'#fff'),'right');
+ // messages sit on the sand, below the action strip and clear of the JUMP button
+ if(R.bmT>0&&R.bm){const p=fs(17),mw=(W>H?W*.66:W-40),ln=wrap(R.bm,mw-24,p).slice(0,2),bh=ln.length*(p+6)+14,cxm=W>H?SAFE.l+20+mw/2:W/2,ym=gy+30*S;g.globalAlpha=Math.min(1,R.bmT*2.5);g.fillStyle='rgba(20,5,45,.86)';rr(cxm-mw/2,ym,mw,bh,14);g.fill();ln.forEach((l,k)=>txt(l,cxm,ym+7+p+k*(p+6)-3,p,'#fff',null,true));g.globalAlpha=1}
+ if(R.respawn>0){g.globalAlpha=Math.max(0,1-Math.abs(R.respawn-.7)/.7);g.fillStyle='#14062e';g.fillRect(0,0,W,H);g.globalAlpha=1}}
+function drawBHaz(o,x,gy,U,R){const k=o.k;
+ if(k==='log'||k==='dlog'){const logs=k==='dlog'?[-2.5,2.5]:[0];for(const off of logs){const lx=x+off*U,w=2.2*U,h=1.6*U;g.fillStyle='#7a4a26';rr(lx-w/2,gy-h,w,h,6*S);g.fill();g.fillStyle='rgba(0,0,0,.15)';g.fillRect(lx-w/2+4*S,gy-h*.55,w-14*S,2*S);circ(lx+w/2-4*S,gy-h/2,h/2,'#a8743e');circ(lx+w/2-4*S,gy-h/2,h/4,'#8a5a2e')}}
+ else if(k==='wave'||k==='big'){const w=o.w*U,h=o.h*U,sw=Math.sin(R.t*3+o.ph)*2*S;g.fillStyle=k==='big'?'#155a8c':'#1f6fa8';g.beginPath();g.moveTo(x-w/2,gy);g.quadraticCurveTo(x-w*.2,gy-h*1.2,x+w*.4+sw,gy-h);g.quadraticCurveTo(x+w*.2,gy-h*.6,x+w/2,gy);g.fill();
+  g.fillStyle='rgba(255,255,255,.25)';g.beginPath();g.moveTo(x-w*.3,gy-h*.3);g.quadraticCurveTo(x-w*.1,gy-h*.9,x+w*.3+sw,gy-h*.95);g.lineTo(x+w*.2,gy-h*.8);g.quadraticCurveTo(x,gy-h*.7,x-w*.25,gy-h*.25);g.fill();
+  for(let j=0;j<6;j++)circ(x+w*.15+j*4*S+sw,gy-h+j*2*S,(k==='big'?5:4)*S,'#fff')}
+ else if(k==='crab'){g.save();g.translate(x,gy);g.scale(1.5,1.5);g.translate(-x,-gy);const sc=Math.sin(R.t*18+o.ph),cl=Math.sin(R.t*9+o.ph);const y=gy-5*S;g.strokeStyle='#b8321e';g.lineWidth=2*S;g.beginPath();for(let j=-1;j<=1;j++){g.moveTo(x+j*4*S,y);g.lineTo(x+j*5*S-4*S,y+5*S+sc*j*1.5*S);g.moveTo(x+j*4*S,y);g.lineTo(x+j*5*S+4*S,y+5*S-sc*j*1.5*S)}g.stroke();
+  ell(x,y-2*S,9*S,6*S,'#e0442a');circ(x-11*S,y-6*S-cl*2*S,4*S,'#e0442a');circ(x+11*S,y-6*S+cl*2*S,4*S,'#e0442a');g.strokeStyle='#e0442a';g.beginPath();g.moveTo(x-3*S,y-7*S);g.lineTo(x-4*S,y-12*S);g.moveTo(x+3*S,y-7*S);g.lineTo(x+4*S,y-12*S);g.stroke();circ(x-4*S,y-13*S,2*S,'#fff');circ(x+4*S,y-13*S,2*S,'#fff');circ(x-4*S,y-13*S,1*S,'#111');circ(x+4*S,y-13*S,1*S,'#111');g.restore()}
+ else if(k==='ball'){const r=1.0*U,y=gy-o.yb*U-r;ell(x,gy-1*S,r*(1-o.yb*.25),3*S,'rgba(0,0,0,.2)');g.save();g.translate(x,y);g.rotate(-o.at*7);const cols=['#ff3b6b','#ffe14a','#3bc4ff','#fff'];for(let j=0;j<4;j++){g.fillStyle=cols[j];g.beginPath();g.moveTo(0,0);g.arc(0,0,r,j*Math.PI/2,(j+1)*Math.PI/2);g.fill()}circ(0,0,r*.22,'#fff');g.restore()}
+ else if(k==='gull'){const y=gy-o.yb*U-6*S,fl=Math.sin(R.t*16+o.ph);if(o.yb<3)ell(x,gy-1*S,16*S,3.5*S,'rgba(0,0,0,.18)');g.save();g.translate(x,y);g.scale(1.6,1.6);g.translate(-x,-y);ell(x,y,11*S,5*S,'#f4f4f4');circ(x-10*S,y-3*S,4.5*S,'#f4f4f4');circ(x-11.5*S,y-4*S,1.1*S,'#111');g.fillStyle='#ff9a2a';g.beginPath();g.moveTo(x-14*S,y-3*S);g.lineTo(x-20*S,y-1.5*S);g.lineTo(x-14*S,y-1*S);g.fill();
+  g.fillStyle='#9aa4b0';g.beginPath();g.moveTo(x-3*S,y-2*S);g.lineTo(x+4*S,y-2*S-fl*14*S);g.lineTo(x+12*S,y-3*S-fl*10*S);g.closePath();g.fill();g.fillStyle='#d8dde4';g.beginPath();g.moveTo(x+9*S,y);g.lineTo(x+16*S,y-3*S);g.lineTo(x+15*S,y+2*S);g.fill();g.restore()}}
 
 // ===== UI: screens, buttons, swipe controls (same scheme as Chef Kelly's Cooking Challenge) =====
 let state='title',BTN=[],BTNDOWN=null,T=0,PREV='title',HOWP=0;
@@ -710,7 +918,7 @@ addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(e.target&&e.target
 addEventListener('keyup',e=>{const k=e.key.toLowerCase();KEYS[k]=false;if(k===' '||k==='j'||k==='enter')HELD.a=false});
 // ---------- main loop ----------
 let last=performance.now();
-function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;T+=dt;BTN.length=0;g.setTransform(DPR,0,0,DPR,0,0);g.imageSmoothingEnabled=true;
+function frame(now){const rawDt=Math.min(.1,Math.max(0,(now-last)/1000)),dt=Math.min(.05,rawDt);if(G)G.rawDt=rawDt;last=now;T+=dt;BTN.length=0;g.setTransform(DPR,0,0,DPR,0,0);g.imageSmoothingEnabled=true;
  try{if(state==='play'&&G){if(window.__QA&&window.__QA.auto)autoPlay(dt);if(window.__QA&&window.__QA.hook)window.__QA.hook(dt);const U={walk:upWalk,road:upRoad,run:upRun,sky:upSky,rhythm:upRhythm}[G.eng];const reps=window.__QA&&window.__QA.speed&&G.eng!=='rhythm'?window.__QA.speed:(window.__QA&&window.__QA.freeze?0:1);for(let k=0;k<reps&&state==='play';k++){if(k&&window.__QA.auto)autoPlay(dt);U(dt)}if(G.eng!=='rhythm'&&G.eng!=='run')SWQ.length=0}
   if(state==='title')drawTitle();else if(state==='levels')drawLevels();else if(state==='intro')drawIntro();else if(state==='how')drawHow();
   else if(state==='play'||state==='pause'){({walk:drawWalk,road:drawRoad,run:drawRun,sky:drawSky,rhythm:drawRhythm})[G.eng]();drawHUD();if(state==='pause'){BTN.length=0;drawPause()}}
@@ -735,13 +943,25 @@ function autoPlay(dt){const A=window.__QA;JOY.dx=0;JOY.dy=0;HELD.a=false;const t
    if(A.stuck>0){A.stuck-=dt;JOY.dx=0;JOY.dy=(P.y%230<115)?-1:1;JOY.dx=P.x<280?1:-1}else to(n.x,n.y);if(d<135)ACT.a=true}}
  else if(G.eng==='road'){const R=roadGeom(),px=W/2+G.x;let best=null,bs=-1e9;for(let l=0;l<4;l++){const lx=R.x0+R.lw*(l+.5);let sc=-Math.abs(lx-px)*.02;for(const c of G.traffic){if(Math.abs(c.sx-lx)<R.lw*.6&&c.sy<R.carY+70*S&&c.sy>R.carY-340*S)sc-=50+(c.sy-(R.carY-340*S))*.1}for(const p of G.picks)if(!p.got&&Math.abs(p.sx-lx)<R.lw*.4&&p.sy<R.carY&&p.sy>R.carY-300*S)sc+=8;if(sc>bs){bs=sc;best=lx}}
   const dx=best-px;JOY.dx=clamp(dx/(30*S),-1,1);JOY.dy=-1;if(G.kind==='chase'){if(G.charges>0&&G.boost<=0)ACT.a=true}else if(G.bolts>=6)HELD.a=true}
+ else if(G.eng==='run'&&G.kind==='beach'){JOY.dx=.3;if(bBot(G))ACT.a=true}
  else if(G.eng==='run'){const nx=G.obs.filter(o=>o.rx>-1&&!o.hit).sort((a,b)=>a.rx-b.rx)[0];JOY.dx=.3;
   if(!G.fly){if(nx&&nx.rx<(G.kind==='beach'?5.2:4.6)&&nx.rx>0&&!G.air)ACT.a=true}
   else{const p=G.pick.filter(q=>q.rx>0).sort((a,b)=>a.rx-b.rx)[0];let ty=p?p.y-1.5:12;if(nx&&nx.k==='owl'&&nx.rx<10)ty=nx.y>14?nx.y-8:nx.y+8;if(G.y<ty)HELD.a=true}}
  else if(G.eng==='sky'){const r=G.rings.filter(q=>!q.done).sort((a,b)=>a.z-b.z)[0];if(r){JOY.dx=clamp((r.x-G.x)*4,-1,1);JOY.dy=clamp((r.y-G.y)*4,-1,1);if(r.gold&&r.z<1+G.speed*.6&&G.loop<=0)ACT.a=true}
   const b=G.birds.filter(q=>!q.done&&q.z<1.5)[0];if(b&&G.loop<=0&&Math.hypot(b.x-G.x,b.y-G.y)<.3)ACT.a=true}
  else if(G.eng==='rhythm'){const now=rClock();for(const n of G.notes)if(!n.hit&&Math.abs(n.t-now)<.04&&!n.q){n.q=1;SWQ.push(n.d)}}}
-window.__T={get state(){return state},get L(){return L},get G(){return G},get RES(){return RES},open:openLevel,start:startLevel,go,save,LEVELS,BTN,songClock,unlockAll(){save.unlocked=8;persist()},runHurt,RUNJ,act(){ACT.a=true},joy(x){JOY.dx=x}};
+// beach bot: jump so the peak lands on the next hazard (meet time includes moving hazards); double jump over double logs
+function bBot(R,shift){const T0=BJ.v/BJ.g;let best=null,bt=1e9,bi=-1;
+ for(let i=R.hi;i<R.haz.length;i++){const o=R.haz[i];const rx=o.cd-R.dist;if(o.d0-R.dist>90)break;if(o.hit||o.cleared)continue;const hw=bMaxHw(o);if(rx<-hw)continue;
+  const m=BMOV[o.k];let tm;const rxa=o.k==='dlog'?rx-2.5:rx;if(m){const v=m.v;tm=(o.act||rx<=m.act)?rx/(R.speed+v):(rx-m.act)/R.speed+m.act/(R.speed+v)}else tm=rxa/R.speed;
+  if(tm<bt){bt=tm;best=o;bi=i}}
+ if(!best)return false;const sh=shift&&shift[bi]||0;
+ if(!R.air)return bt<=T0+sh;
+ if(best.k==='dlog'&&!R.dj&&R.vy<0&&R.y<2.6&&R.y>1.05&&best.cd-R.dist>-3.5)return true;return false}
+function bSim(o){o=o||{};const R=mkBeach();R.sim=true;const st={x:o.sx||0,y:0};let f=0;
+ while(R.dist<R.len&&f<60*400){f++;if(bBot(R,o.shift))R.jb=BJ.buf;bStep(R,BJ.step,st);bStep(R,BJ.step,st);if(o.stopAt&&R.dist>o.stopAt)break}
+ return R}
+window.__T={get state(){return state},get L(){return L},get G(){return G},get RES(){return RES},open:openLevel,start:startLevel,go,save,LEVELS,BTN,songClock,unlockAll(){save.unlocked=8;persist()},runHurt,RUNJ,bSim,bBot,bHurt,bMaxHw,bMeetRange,shellSafe,beachCourse,BJ,BMOV,EXCL,mkBeach,bStep,act(){ACT.a=true},joy(x){JOY.dx=x}};
 
 </script><!--share--><style>#dock{position:fixed;z-index:60;display:none;gap:6px;top:0;left:0}#dock.inl{position:static;display:flex;justify-content:center;flex-wrap:wrap;margin:6px auto}
 .dk{box-sizing:border-box;height:34px;border-radius:17px;border:2px solid #fff;background:rgba(0,0,0,.66);color:#fff;font:bold 14px/30px system-ui,-apple-system,Segoe UI,sans-serif;padding:0 12px;margin:0;white-space:nowrap;touch-action:manipulation;-webkit-tap-highlight-color:transparent;cursor:pointer;flex:none}
