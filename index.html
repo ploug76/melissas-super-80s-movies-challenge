@@ -150,16 +150,23 @@ function hairBack(x,y,s,wind){const c=[[-11,6,9],[11,6,9],[-13,16,8],[13,16,8],[
 function drawMel(x,y,s,o,opt){o=OUT[o]||OUT.casual;opt=opt||{};const ph=opt.ph||0,pose=opt.pose||'stand',sw=pose==='walk'||pose==='skate'?Math.sin(ph):0;
  g.save();if(!opt.noShadow)ell(x,y,15*s,4*s,'rgba(0,0,0,.25)');
  const hipY=y-30*s,shY=y-50*s;
+ if(opt.lean){g.translate(x,hipY);g.rotate(opt.lean);g.translate(-x,-hipY)}
  hairBack(x,shY-16*s,s,opt.wind);
  // legs
  const leg=(lx,a,col,col2,len)=>{g.save();g.translate(lx,hipY);g.rotate(a);g.fillStyle=col;rr(-3.2*s,0,6.4*s,len*s,2.5*s);g.fill();if(col2){g.fillStyle=col2;g.fillRect(.6*s,0,2*s,len*s)}g.restore()};
  const foot=(lx,a,len)=>{const fx=lx+Math.sin(-a)*len*s,fy=hipY+Math.cos(a)*len*s;return[fx,fy]};
  let la=sw*.45,rA=-sw*.45;if(pose==='ride'){la=-.9;rA=-.7}if(pose==='sit'){la=rA=-1.3}
  const LL=30;
- if(o.bottom==='jeans'||o.bottom==='pants'){leg(x-4*s,la,o.pants,o.pants2,LL);leg(x+4*s,rA,o.pants,o.pants2,LL)}
+ if(pose==='saddle'){const hx=x+2*s,TH=14,SH=18,ta=-1.15,sa=.12;const kx=hx-Math.sin(ta)*TH*s,ky=hipY+Math.cos(ta)*TH*s,fx=kx-Math.sin(sa)*SH*s,fy=ky+Math.cos(sa)*SH*s;
+  // stirrup leather from the saddle to the stirrup iron under the boot
+  g.strokeStyle='#4a2810';g.lineWidth=1.6*s;g.beginPath();g.moveTo(hx+3*s,hipY+3*s);g.lineTo(fx+1*s,fy+1*s);g.stroke();
+  g.save();g.translate(hx,hipY);g.rotate(ta);g.fillStyle=o.pants||SKIN;rr(-3.6*s,-1*s,7.2*s,(TH+2)*s,3*s);g.fill();if(o.pants2){g.fillStyle=o.pants2;g.fillRect(.6*s,0,2*s,TH*s)}g.restore();
+  g.save();g.translate(kx,ky);g.rotate(sa);g.fillStyle=o.pants||SKIN;rr(-3.2*s,-1.5*s,6.4*s,(SH+1)*s,2.5*s);g.fill();if(o.boots){g.fillStyle=o.shoe;rr(-3.8*s,(SH-9)*s,7.6*s,9*s,2*s);g.fill()}g.restore();
+  ell(fx+2.5*s,fy+.5*s,5*s,2.4*s,o.shoe);g.strokeStyle='#c9c9c9';g.lineWidth=1.4*s;g.beginPath();g.moveTo(fx-3*s,fy+2.4*s);g.lineTo(fx+5*s,fy+2.4*s);g.stroke()}
+ else if(o.bottom==='jeans'||o.bottom==='pants'){leg(x-4*s,la,o.pants,o.pants2,LL);leg(x+4*s,rA,o.pants,o.pants2,LL)}
  else if(o.bottom==='leotard'){leg(x-4*s,la,o.legs,null,LL);leg(x+4*s,rA,o.legs,null,LL)}
  else if(o.bottom!=='gown'){leg(x-3.5*s,la,SKIN,null,LL);leg(x+3.5*s,rA,SKIN,null,LL)}
- if(o.bottom!=='gown')for(const [lx,a] of [[x-4*s,la],[x+4*s,rA]]){const [fx,fy]=foot(lx,a,LL);
+ if(o.bottom!=='gown'&&pose!=='saddle')for(const [lx,a] of [[x-4*s,la],[x+4*s,rA]]){const [fx,fy]=foot(lx,a,LL);
   if(o.warm){g.save();g.translate(lx,hipY);g.rotate(a);g.fillStyle=o.warm;rr(-4*s,(LL-11)*s,8*s,9*s,2*s);g.fill();g.fillStyle='rgba(0,0,0,.12)';for(let k=0;k<3;k++)g.fillRect(-4*s,(LL-10+k*3)*s,8*s,1*s);g.restore()}
   if(o.boots){g.save();g.translate(lx,hipY);g.rotate(a);g.fillStyle=o.shoe;rr(-3.8*s,(LL-10)*s,7.6*s,10*s,2*s);g.fill();g.restore()}
   ell(fx+2*s*(opt.face||1),fy,5*s,2.6*s,o.shoe);
@@ -180,8 +187,9 @@ function drawMel(x,y,s,o,opt){o=OUT[o]||OUT.casual;opt=opt||{};const ph=opt.ph||
  if(o.pack){g.fillStyle='#555';rr(x-13*s,shY+2*s,4*s,16*s,1.5*s);g.fill();g.fillStyle='#e33';g.fillRect(x-12.5*s,shY+4*s,3*s,2*s)}
  // arms
  const arm=(ax,a,col)=>{g.save();g.translate(ax,shY+1.5*s);g.rotate(a);g.fillStyle=col||SKIN;rr(-2.6*s,0,5.2*s,10*s,2.4*s);g.fill();g.fillStyle=SKIN;rr(-2.4*s,8*s,4.8*s,10*s,2.4*s);g.fill();circ(0,18.5*s,2.6*s,SKIN);g.restore()};
- let aa=opt.arms!=null?opt.arms:(pose==='walk'?-sw*.5:.12);if(pose==='ride')aa=-.9;
- arm(x-10*s,aa+.15,o.sleeve);arm(x+10*s,-aa-.15,o.sleeve);
+ let aa=opt.arms!=null?opt.arms:(pose==='walk'?-sw*.5:.12);if(pose==='ride')aa=-.9;if(pose==='saddle')aa=-.75;
+ if(pose==='saddle'){arm(x-8*s,-1.1,o.sleeve);arm(x+8*s,-.95,o.sleeve);if(opt.rein){const hx=x+8*s+Math.sin(.95)*18.5*s,hy=shY+1.5*s+Math.cos(.95)*18.5*s;g.strokeStyle='#3a1e0c';g.lineWidth=1.5*s;g.beginPath();g.moveTo(hx,hy);g.quadraticCurveTo((hx+opt.rein[0])/2,Math.max(hy,opt.rein[1])+4*s,opt.rein[0],opt.rein[1]);g.stroke()}}
+ else{arm(x-10*s,aa+.15,o.sleeve);arm(x+10*s,-aa-.15,o.sleeve)}
  if(opt.zap){g.save();g.translate(x+12*s,shY+8*s);g.fillStyle='#444';g.fillRect(0,-2*s,12*s,4*s);g.restore()}
  if(o.sweater){g.fillStyle=o.sweater;g.beginPath();g.moveTo(x-11*s,shY-1*s);g.quadraticCurveTo(x,shY-4*s,x+11*s,shY-1*s);g.lineTo(x+12*s,shY+5*s);g.quadraticCurveTo(x,shY+8*s,x-12*s,shY+5*s);g.fill();
   circ(x,shY+7*s,3*s,o.sweater);g.fillRect(x-3*s,shY+7*s,2.5*s,8*s);g.fillRect(x+.5*s,shY+7*s,2.5*s,7*s);g.fillStyle='rgba(120,60,140,.25)';g.fillRect(x-11*s,shY+3*s,22*s,1*s)}
@@ -426,21 +434,27 @@ function drawRoad(){const Gr=G,R=roadGeom(),chase=Gr.kind==='chase',off=(Gr.dist
   txt(`${Gr.mph||0} mph`,x+w-12*S,y+23*S,fs(20),Gr.mph>=88?'#7ff':'#fff','right')}}
 // ================= RUNNER engine (Beach Gallop, Moonshot Finale) =================
 function mkRun(kind){return{eng:'run',kind,t:0,score:0,dist:0,speed:kind==='beach'?11:10,y:0,vy:0,air:false,hit:0,obs:[],pick:[],next:30,nextP:12,got:0,ph:0,fx:[],msg:'',msgT:0,len:kind==='beach'?1000:1200,fly:false,shake:0}}
+// Ground jump tuning (v3 fix): the old jump (v17/16, gravity 46) cleared a wave's hurtbox for only ~0.37 s, which at
+// gallop speed (~12 u/s) covers 4.5 u while the wave's hit zone was 5.2 u wide, so no wave could be jumped cleanly.
+// Now: a higher, floatier jump, a 0.15 s jump buffer (a tap just before landing still jumps), and fair hurtboxes
+// (player half-width 0.7 u, obstacles 80% wide / 85% tall) that sit inside the drawn art.
+const RUNJ={vBeach:18,vMoon:17.5,g:40,buf:.15,phw:.7};
+function runHurt(o){return{hw:o.w*.4+RUNJ.phw,hh:o.h*.85}}
 function groundY(){return H-CTRLH()-70*S}
 const RPM=()=>10*S;
 function upRun(dt){const R=G;R.t+=dt;if(R.msgT>0)R.msgT-=dt;if(R.shake>0)R.shake-=dt;const st=steer(),beach=R.kind==='beach';
- let target=(beach?12:11)+st.x*4;if(R.hit>0){R.hit-=dt;target=6}R.speed=lerp(R.speed,target,dt*2);R.dist+=R.speed*dt;R.ph+=R.speed*dt*.9;R.score+=dt*5;
+ let target=(beach?12:11)+st.x*4;if(R.hit>0){R.hit-=dt;target=9}R.speed=lerp(R.speed,target,dt*2);R.dist+=R.speed*dt;R.ph+=R.speed*dt*.9;R.score+=dt*5;
  let sw=popSwipe();while(sw){if(sw==='U')ACT.a=true;sw=popSwipe()}
  if(!beach&&!R.fly&&R.dist>=420){R.fly=true;R.vy=-14;sfx('jump');say('Liftoff! Hold FLY to soar across the moon!',2.4)}
  const grav=R.fly?22:46;
  if(R.fly){if(held('a')||KEYS[' '])R.vy-=50*dt;if(st.y<-.3)R.vy-=34*dt*-st.y;if(st.y>.3)R.vy+=30*dt*st.y;pressed('a');R.vy+=grav*dt;R.vy=clamp(R.vy,-9,9);R.y=clamp(R.y-R.vy*dt,0,(groundY()-HUDH()-90*S)/RPM());if(R.y<=0){R.y=0;R.vy=Math.min(0,R.vy)}}
- else{if(pressed('a')&&!R.air){R.vy=beach?17:16;R.air=true;sfx('jump')}if(R.air){R.vy-=grav*dt;R.y+=R.vy*dt;if(R.y<=0){R.y=0;R.vy=0;R.air=false}}}
+ else{if(pressed('a'))R.jb=RUNJ.buf;if(R.jb>0)R.jb-=dt;if(R.jb>0&&!R.air){R.jb=0;R.vy=beach?RUNJ.vBeach:RUNJ.vMoon;R.air=true;sfx('jump')}if(R.air){R.vy-=RUNJ.g*dt;R.y+=R.vy*dt;if(R.y<=0){R.y=0;R.vy=0;R.air=false}}}
  // spawn
  if(R.dist>R.next&&R.dist<R.len-40){if(beach){const k=Math.random()<.45?'wave':'log';R.obs.push({k,d:R.dist+60,w:k==='wave'?3.2:2.2,h:k==='wave'?2.6:1.6});R.next=R.dist+rnd(18,30)}
   else if(!R.fly){R.obs.push({k:'can',d:R.dist+60,w:1.6,h:2});R.next=R.dist+rnd(16,26)}else{const hi=Math.random()<.5;R.obs.push({k:hi?'owl':'cloud',d:R.dist+60,w:3,h:2,y:hi?rnd(14,24):rnd(4,10)});R.next=R.dist+rnd(18,28)}}
  if(R.dist>R.nextP&&R.dist<R.len-30){const air=Math.random()<.4;R.pick.push({d:R.dist+60,y:R.fly?rnd(2,26):air?rnd(4,6):.8});R.nextP=R.dist+(R.fly?rnd(11,16):rnd(13,20))}
  const px=0,py=R.y;for(const o of R.obs){const rx=o.d-R.dist-(W*.3)/RPM()+ (W*.3)/RPM();o.rx=o.d-R.dist;
-  if(!o.hit&&R.hit<=0&&Math.abs(o.rx)<o.w*.5+1){const oy=o.y||0;if((o.k==='owl'||o.k==='cloud')?Math.abs(py-oy)<2.6:py<o.h*.9){o.hit=true;if(o.k==='cloud'){continue}R.hit=.9;R.shake=.3;R.score=Math.max(0,R.score-100);sfx('hit');say(beach?(o.k==='wave'?'Splash! Jump the waves!':'Oof! Jump the logs!'):'Bonk!',1.2)}}}
+  if(!o.hit&&R.hit<=0&&Math.abs(o.rx)<runHurt(o).hw){const oy=o.y||0;if((o.k==='owl'||o.k==='cloud')?Math.abs(py-oy)<2.6:py<runHurt(o).hh){o.hit=true;if(o.k==='cloud'){continue}R.hit=.9;R.shake=.3;R.score=Math.max(0,R.score-100);sfx('hit');say(beach?(o.k==='wave'?'Splash! Jump the waves!':'Oof! Jump the logs!'):'Bonk!',1.2)}}}
  R.obs=R.obs.filter(o=>o.rx>-20);
  for(const p of R.pick){p.rx=p.d-R.dist;if(!p.got&&Math.abs(p.rx)<1.6&&Math.abs(R.y+1.5-p.y)<2.4){p.got=true;R.got++;R.score+=beach?60:80;sfx('pick')}}R.pick=R.pick.filter(p=>p.rx>-20&&!p.got);
  if(R.dist>=R.len){const n=R.got;R.score+=500+n*20;if(beach)finish(true,R.score,n>=35?3:n>=22?2:1,`You reached Danny at the pier with ${n} shells!`);else finish(true,R.score,n>=40?3:n>=25?2:1,`You flew across the moon with ${n} stars!`)}}
@@ -456,13 +470,13 @@ function drawRun(){const R=G,beach=R.kind==='beach',gy=groundY(),X0=W*.3;g.save(
   g.fillStyle='#1a1a2e';g.fillRect(0,gy,W,H-gy);g.fillStyle='#3a3a52';g.fillRect(0,gy,W,6*S);
   const rx=(420-R.dist)*RPM()+X0;if(rx>-200&&rx<W+100){g.fillStyle='#8a6a4a';g.beginPath();g.moveTo(rx-80*S,gy);g.lineTo(rx,gy-30*S);g.lineTo(rx,gy);g.fill()}}
  for(const o of R.obs){const x=X0+o.rx*RPM();if(o.k==='log'){g.fillStyle='#7a4a26';rr(x-o.w*RPM()/2,gy-o.h*RPM(),o.w*RPM(),o.h*RPM(),6*S);g.fill();circ(x+o.w*RPM()/2-4*S,gy-o.h*RPM()/2,o.h*RPM()/2,'#a8743e')}
-  else if(o.k==='wave'){const w=o.w*RPM(),h=o.h*RPM();g.fillStyle='#3fa6d0';g.beginPath();g.moveTo(x-w/2,gy);g.quadraticCurveTo(x-w*.2,gy-h*1.2,x+w*.4,gy-h);g.quadraticCurveTo(x+w*.2,gy-h*.6,x+w/2,gy);g.fill();g.fillStyle='#fff';for(let k=0;k<5;k++)circ(x+w*.2+k*4*S,gy-h+k*2*S,4*S,'#fff')}
+  else if(o.k==='wave'){const w=o.w*RPM(),h=o.h*RPM();g.fillStyle='#1f6fa8';g.beginPath();g.moveTo(x-w/2,gy);g.quadraticCurveTo(x-w*.2,gy-h*1.2,x+w*.4,gy-h);g.quadraticCurveTo(x+w*.2,gy-h*.6,x+w/2,gy);g.fill();g.fillStyle='#fff';for(let k=0;k<5;k++)circ(x+w*.2+k*4*S,gy-h+k*2*S,4*S,'#fff')}
   else if(o.k==='can'){g.fillStyle='#8a929a';rr(x-10*S,gy-o.h*RPM(),20*S,o.h*RPM(),3*S);g.fill();g.fillStyle='#6a727a';g.fillRect(x-12*S,gy-o.h*RPM(),24*S,4*S)}
   else if(o.k==='owl'){const y=gy-o.y*RPM()-40*S;circ(x,y,14*S,'#8a6a4a');circ(x-5*S,y-3*S,4*S,'#ffe14a');circ(x+5*S,y-3*S,4*S,'#ffe14a');circ(x-5*S,y-3*S,1.8*S,'#111');circ(x+5*S,y-3*S,1.8*S,'#111')}
   else if(o.k==='cloud'){const y=gy-o.y*RPM()-30*S;for(const [a,b,c] of [[0,0,18],[16,4,14],[-16,4,14]])circ(x+a*S,y+b*S,c*S,'rgba(200,210,255,.35)')}}
  for(const p of R.pick){const x=X0+p.rx*RPM(),y=gy-p.y*RPM()-(beach?6*S:12*S);if(beach){g.fillStyle='#ffd0c0';g.beginPath();g.arc(x,y,9*S,Math.PI,0);g.lineTo(x,y+6*S);g.fill();g.strokeStyle='#e89a8a';g.lineWidth=1.5;for(let k=-2;k<=2;k++){g.beginPath();g.moveTo(x,y+5*S);g.lineTo(x+k*4*S,y-7*S);g.stroke()}}else star(x,y,12*S,'#ffe14a','#fff')}
  const py=gy-R.y*RPM(),fl=R.hit>0&&(R.hit*10|0)%2;
- if(!fl){if(beach){const by=py;drawHorse(X0,by,S*1.4,R.air?1.2:R.ph,'#8a5230');drawMel(X0-3*S,by-59*S,S*1.27,'beach',{pose:'ride',noShadow:true,wind:4})}
+ if(!fl){if(beach){const bob=R.air?0:-Math.abs(Math.sin(R.ph))*2.5*S,by=py+bob,post=R.air?-1.5*S:-Math.max(0,Math.sin(R.ph*2+.6))*1.5*S;drawHorse(X0,by,S*1.4,R.air?1.2:R.ph,'#8a5230');drawMel(X0-2*S,by-27*S+post,S*1.27,'beach',{pose:'saddle',noShadow:true,wind:4,lean:R.air?.12:.04,rein:[X0+35*S,by-76*S]})}
   else{drawBMX(X0,py,S*1.5,R.ph*2);drawMel(X0+3*S,py-21*S,S*1.2,'bmx',{pose:'ride',noShadow:true,wind:5,arms:-1.3})}}
  g.restore();
  const w=Math.min(W-40,300*S),x=(W-w)/2,y=HUDH()+8*S;g.fillStyle='rgba(0,0,0,.55)';rr(x,y,w,26*S,13*S);g.fill();g.fillStyle=beach?'#ffb03a':'#9fd0ff';rr(x+3,y+3,Math.max(10,(w-6)*Math.min(1,R.dist/R.len)),26*S-6,10*S);g.fill();txt(beach?`🐚 ${R.got}`:`⭐ ${R.got}`,x+w/2,y+19*S,fs(16),'#fff')}
@@ -697,7 +711,7 @@ addEventListener('keyup',e=>{const k=e.key.toLowerCase();KEYS[k]=false;if(k===' 
 // ---------- main loop ----------
 let last=performance.now();
 function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;T+=dt;BTN.length=0;g.setTransform(DPR,0,0,DPR,0,0);g.imageSmoothingEnabled=true;
- try{if(state==='play'&&G){if(window.__QA&&window.__QA.auto)autoPlay(dt);const U={walk:upWalk,road:upRoad,run:upRun,sky:upSky,rhythm:upRhythm}[G.eng];const reps=window.__QA&&window.__QA.speed&&G.eng!=='rhythm'?window.__QA.speed:1;for(let k=0;k<reps&&state==='play';k++){if(k&&window.__QA.auto)autoPlay(dt);U(dt)}if(G.eng!=='rhythm'&&G.eng!=='run')SWQ.length=0}
+ try{if(state==='play'&&G){if(window.__QA&&window.__QA.auto)autoPlay(dt);if(window.__QA&&window.__QA.hook)window.__QA.hook(dt);const U={walk:upWalk,road:upRoad,run:upRun,sky:upSky,rhythm:upRhythm}[G.eng];const reps=window.__QA&&window.__QA.speed&&G.eng!=='rhythm'?window.__QA.speed:(window.__QA&&window.__QA.freeze?0:1);for(let k=0;k<reps&&state==='play';k++){if(k&&window.__QA.auto)autoPlay(dt);U(dt)}if(G.eng!=='rhythm'&&G.eng!=='run')SWQ.length=0}
   if(state==='title')drawTitle();else if(state==='levels')drawLevels();else if(state==='intro')drawIntro();else if(state==='how')drawHow();
   else if(state==='play'||state==='pause'){({walk:drawWalk,road:drawRoad,run:drawRun,sky:drawSky,rhythm:drawRhythm})[G.eng]();drawHUD();if(state==='pause'){BTN.length=0;drawPause()}}
   else if(state==='result')drawResult();else if(state==='final')drawFinal();
@@ -727,7 +741,7 @@ function autoPlay(dt){const A=window.__QA;JOY.dx=0;JOY.dy=0;HELD.a=false;const t
  else if(G.eng==='sky'){const r=G.rings.filter(q=>!q.done).sort((a,b)=>a.z-b.z)[0];if(r){JOY.dx=clamp((r.x-G.x)*4,-1,1);JOY.dy=clamp((r.y-G.y)*4,-1,1);if(r.gold&&r.z<1+G.speed*.6&&G.loop<=0)ACT.a=true}
   const b=G.birds.filter(q=>!q.done&&q.z<1.5)[0];if(b&&G.loop<=0&&Math.hypot(b.x-G.x,b.y-G.y)<.3)ACT.a=true}
  else if(G.eng==='rhythm'){const now=rClock();for(const n of G.notes)if(!n.hit&&Math.abs(n.t-now)<.04&&!n.q){n.q=1;SWQ.push(n.d)}}}
-window.__T={get state(){return state},get L(){return L},get G(){return G},get RES(){return RES},open:openLevel,start:startLevel,go,save,LEVELS,BTN,songClock,unlockAll(){save.unlocked=8;persist()}};
+window.__T={get state(){return state},get L(){return L},get G(){return G},get RES(){return RES},open:openLevel,start:startLevel,go,save,LEVELS,BTN,songClock,unlockAll(){save.unlocked=8;persist()},runHurt,RUNJ,act(){ACT.a=true},joy(x){JOY.dx=x}};
 
 </script><!--share--><style>#dock{position:fixed;z-index:60;display:none;gap:6px;top:0;left:0}#dock.inl{position:static;display:flex;justify-content:center;flex-wrap:wrap;margin:6px auto}
 .dk{box-sizing:border-box;height:34px;border-radius:17px;border:2px solid #fff;background:rgba(0,0,0,.66);color:#fff;font:bold 14px/30px system-ui,-apple-system,Segoe UI,sans-serif;padding:0 12px;margin:0;white-space:nowrap;touch-action:manipulation;-webkit-tap-highlight-color:transparent;cursor:pointer;flex:none}
