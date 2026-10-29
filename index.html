@@ -1272,4 +1272,25 @@ window.__unlock={unlocked:un,sample:window.__SAMPLE||null,get badge(){return las
 #palbTabs button{min-height:48px!important;font-size:16px!important}
 #palbList li{min-height:30px;height:auto!important;font-size:16px!important}
 </style>
+<!-- gamepad:start -->
+<script src="gamepad.js?v=2"></script>
+<script>
+try{HOW.push(['🎮 Controller','Xbox, PlayStation or Switch controllers work (USB or Bluetooth, on a computer or paired to your phone). Left stick or D-pad: move (rhythm levels: D-pad hits the arrows). A or X: the big action button. Start: pause. Select: music on/off. Menus: D-pad to pick, A to select, B to go back.'])}catch(e){}
+GamepadSupport.init({
+ keys:{left:'ArrowLeft',right:'ArrowRight',up:'ArrowUp',down:'ArrowDown',a:'Space',x:'Space',y:'Space',start:'KeyP',back:'KeyM'},
+ noRepeat:['a','x','y','start','back'],
+ repeat:false,
+ ignoreSel:'#dock,#mute,#inst,#ios,.tb,#dockHint,#nr,#nrSave',
+ menu:function(){return !!document.querySelector('#palbOv.on,#smpLock.on')||(state!=='play');},
+ items:GamepadSupport.list(function(){return document.querySelector('#palbOv.on,#smpLock.on')?[]:BTN.filter(function(b){return !((state==='intro'||state==='play')&&/^(pause|music)$/.test(b.id))});},{scale:1}),
+ isPaused:function(){return state==='pause'},
+ pause:function(){if(state==='play')go('pause')},
+ back:function(){if(document.querySelector('#palbOv.on,#smpLock.on'))return false;
+  if(state==='pause'){state='play';return true}
+  var b=BTN.find(function(q){return q.id==='back'});if(b){b.cb();return true}
+  return true;},
+ hint:{text:'🎮 Controller: stick to move · A action · Start pause · Select music',when:function(){return state==='title'&&!document.querySelector('#palbOv.on,#smpLock.on')}}
+});
+</script>
+<!-- gamepad:end -->
 </body></html>
