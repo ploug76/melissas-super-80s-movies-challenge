@@ -166,7 +166,7 @@ function headImg(x,y,w){const im=IMG.head;if(!im||!im.complete||!im.naturalWidth
 function hairBack(x,y,s,wind){const c=[[-11,6,9],[11,6,9],[-13,16,8],[13,16,8],[-10,24,7],[10,24,7],[0,-1,11]];for(const [dx,dy,r] of c){circ(x+(dx-(wind||0)*Math.abs(dy)*.08)*s,y+dy*s,r*s,HAIR3)}
  for(const [dx,dy,r] of c){circ(x+(dx-(wind||0)*Math.abs(dy)*.1)*s-1*s,y+dy*s-1.5*s,r*.7*s,HAIR)}}
 // Melissa, feet at (x,y), about 72*s tall. opt: ph (walk phase), pose ('stand'|'walk'|'ride'|'skate'|'sit'), face (1 right/-1 left), wind
-function drawMel(x,y,s,o,opt){o=OUT[o]||OUT.casual;opt=opt||{};const ph=opt.ph||0,pose=opt.pose||'stand',sw=pose==='walk'||pose==='skate'?Math.sin(ph):0;
+function drawMel(x,y,s,o,opt){o=OUT[o]||OUT.casual;opt=opt||{};const ph=opt.ph||0,pose=opt.pose||'stand',ga=opt.amp===undefined?1:opt.amp,sw=pose==='walk'||pose==='skate'||opt.amp!==undefined?Math.sin(ph)*ga:0;
  g.save();if(!opt.noShadow)ell(x,y,15*s,4*s,'rgba(0,0,0,.25)');
  const hipY=y-30*s,shY=y-50*s;
  if(opt.lean){g.translate(x,hipY);g.rotate(opt.lean);g.translate(-x,-hipY)}
@@ -357,7 +357,9 @@ function upWalk(dt){const Gw=G,P=Gw.P;Gw.t+=dt;if(Gw.msgT>0)Gw.msgT-=dt;
  const st=steer();let sp=Gw.kind==='prom'?235:210;if(Gw.kind==='spook')for(const s of Gw.slime)if(Math.hypot(s.x-P.x,s.y-P.y)<s.r)sp*=.5;
  if(P.hit>0){P.hit-=dt;sp*=.35}
  const m=Math.hypot(st.x,st.y);let vx=st.x*sp,vy=st.y*sp;if(m>1){vx/=m;vy/=m}
- if(!hitRect(Gw,P.x+vx*dt,P.y,14))P.x+=vx*dt;if(!hitRect(Gw,P.x,P.y+vy*dt,14))P.y+=vy*dt;if(Math.abs(vx)>4)P.face=vx>0?1:-1;P.ph+=m>.1?dt*12:0;P.moving=m>.1;
+ const _ox=P.x,_oy=P.y;if(!hitRect(Gw,P.x+vx*dt,P.y,14))P.x+=vx*dt;if(!hitRect(Gw,P.x,P.y+vy*dt,14))P.y+=vy*dt;if(Math.abs(vx)>4)P.face=vx>0?1:-1;
+ /* leg check (Grey Heart, Oct 2026): stride phase from distance actually walked (was a fixed clock, even pushing into a wall), legs ease back to standing */
+ {const _d=Math.hypot(P.x-_ox,P.y-_oy),mv=_d>dt*20;P.ph+=_d/18;P.moving=mv;P._ga=(P._ga||0)+((mv?1:0)-(P._ga||0))*Math.min(1,dt*10);if(!mv&&P._ga<.03){P._ga=0;P.ph=Math.round(P.ph/Math.PI)*Math.PI}}
  if(Gw.kind==='prom'){
   for(const it of Gw.items)if(!it.got&&Math.hypot(it.x-P.x,it.y-P.y)<34){it.got=true;Gw.have[it.k]++;Gw.score+=100;sfx('pick');Gw.fx.push({x:it.x,y:it.y,t:0,s:'+100'});say(it.k==='fabric'?`Pink fabric ${Gw.have.fabric}/6`:`Lace ${Gw.have.lace}/4`,1.4)}
   for(const n of Gw.npc){n.x+=n.vx*dt;if(n.x<-40)n.x=Gw.w+40;if(n.x>Gw.w+40)n.x=-40;if(P.hit<=0&&Math.abs(n.x-P.x)<26&&Math.abs(n.y-P.y)<22){P.hit=.9;Gw.score=Math.max(0,Gw.score-50);sfx('hit');say('Whoa! Watch the skaters!',1.4)}}
@@ -397,7 +399,7 @@ function drawWalk(){const Gw=G,P=Gw.P,Z=clamp(W/560,.68,1.5),vw=W/Z,vh=H/Z;let c
  // sprites sorted by y
  const spr=[];for(const n of Gw.npc)spr.push({y:n.y,f:()=>{if(n.k==='skate'){ell(n.x,n.y+2,14,4,'rgba(0,0,0,.25)');g.fillStyle='#333';rr(n.x-16,n.y-4,32,6,3);g.fill();circ(n.x-10,n.y+3,3,'#ff0');circ(n.x+10,n.y+3,3,'#ff0');g.fillStyle='#2a9df4';rr(n.x-7,n.y-32,14,26,4);g.fill();circ(n.x,n.y-38,8,'#e8b48a');g.fillStyle='#d22';g.fillRect(n.x-8,n.y-45,16,5)}
    else drawGhost(n)}});
- spr.push({y:P.y,f:()=>{const fl=P.hit>0&&(P.hit*10|0)%2;if(!fl)drawMel(P.x,P.y,1.45,Gw.outfit||LEVELS[L].outfit,{pose:P.moving?'walk':'stand',ph:P.ph,face:P.face,zap:Gw.kind==='spook'})}});
+ spr.push({y:P.y,f:()=>{const fl=P.hit>0&&(P.hit*10|0)%2;if(!fl)drawMel(P.x,P.y,1.45,Gw.outfit||LEVELS[L].outfit,{pose:P.moving||P._ga>.02?'walk':'stand',ph:P.ph,amp:P._ga||0,face:P.face,zap:Gw.kind==='spook'})}});
  spr.sort((a,b)=>a.y-b.y).forEach(s=>s.f());
  if(Gw.beam){const b=Gw.beam,a=1-b.t/.5;g.strokeStyle=`rgba(255,120,60,${a})`;g.lineWidth=6;g.beginPath();g.moveTo(P.x+14,P.y-44);for(let k=1;k<=8;k++){const f=k/8;g.lineTo(lerp(P.x+14,b.x,f)+Math.sin(k*2+Gw.t*40)*8,lerp(P.y-44,b.y,f)+Math.cos(k*3)*8)}g.stroke();g.strokeStyle=`rgba(120,200,255,${a})`;g.lineWidth=2;g.stroke()}
  for(const f of Gw.fx)txt(f.s,f.x,f.y-30-f.t*40,Math.ceil(20/Z),`rgba(255,255,120,${1-f.t})`,null,true,'rgba(0,0,0,.6)');
