@@ -205,9 +205,11 @@ function drawMel(x,y,s,o,opt){o=OUT[o]||OUT.casual;opt=opt||{};const ph=opt.ph||
  if(o.belt){g.fillStyle=o.belt;g.fillRect(x-8*s,hipY-1*s,16*s,3*s);g.fillStyle='#c9a24a';g.fillRect(x+2*s,hipY-1*s,3*s,3*s)}
  if(o.pack){g.fillStyle='#555';rr(x-13*s,shY+2*s,4*s,16*s,1.5*s);g.fill();g.fillStyle='#e33';g.fillRect(x-12.5*s,shY+4*s,3*s,2*s)}
  // arms
- const arm=(ax,a,col)=>{g.save();g.translate(ax,shY+1.5*s);g.rotate(a);g.fillStyle=col||SKIN;rr(-2.6*s,0,5.2*s,10*s,2.4*s);g.fill();g.fillStyle=SKIN;rr(-2.4*s,8*s,4.8*s,10*s,2.4*s);g.fill();circ(0,18.5*s,2.6*s,SKIN);g.restore()};
+ /* arm check (Oct 30 2026): upper arm + forearm with a real elbow; on the walk each arm swings opposite its leg: the forward arm's elbow flares and the forearm bends up and in, the back arm hangs straight */
+ const arm=(ax,a,col,e)=>{e=e||0;g.save();g.translate(ax,shY+1.5*s);g.rotate(a);g.save();g.translate(0,9*s);g.rotate(e);g.fillStyle=SKIN;rr(-2.4*s,-1*s,4.8*s,10*s,2.4*s);g.fill();circ(0,9.5*s,2.6*s,SKIN);g.restore();g.fillStyle=col||SKIN;rr(-2.6*s,0,5.2*s,10*s,2.4*s);g.fill();g.restore()};
  let aa=opt.arms!=null?opt.arms:(pose==='walk'?-sw*.5:.12);if(pose==='ride')aa=-.9;if(pose==='saddle')aa=-.75;
  if(pose==='saddle'){arm(x-8*s,-1.1,o.sleeve);arm(x+8*s,-.95,o.sleeve);if(opt.rein){const hx=x+8*s+Math.sin(.95)*18.5*s,hy=shY+1.5*s+Math.cos(.95)*18.5*s;g.strokeStyle='#3a1e0c';g.lineWidth=1.5*s;g.beginPath();g.moveTo(hx,hy);g.quadraticCurveTo((hx+opt.rein[0])/2,Math.max(hy,opt.rein[1])+4*s,opt.rein[0],opt.rein[1]);g.stroke()}}
+ else if(opt.arms==null&&(pose==='walk'||pose==='skate')){for(const k of[1,-1]){const v=k*sw,fw=Math.max(0,v),bk=Math.max(0,-v);arm(x-k*10*s,k*(.15+fw*.32-bk*.12),o.sleeve,-k*fw*1.35)}}
  else{arm(x-10*s,aa+.15,o.sleeve);arm(x+10*s,-aa-.15,o.sleeve)}
  if(opt.zap){g.save();g.translate(x+12*s,shY+8*s);g.fillStyle='#444';g.fillRect(0,-2*s,12*s,4*s);g.restore()}
  if(o.sweater){g.fillStyle=o.sweater;g.beginPath();g.moveTo(x-11*s,shY-1*s);g.quadraticCurveTo(x,shY-4*s,x+11*s,shY-1*s);g.lineTo(x+12*s,shY+5*s);g.quadraticCurveTo(x,shY+8*s,x-12*s,shY+5*s);g.fill();
@@ -359,7 +361,7 @@ function upWalk(dt){const Gw=G,P=Gw.P;Gw.t+=dt;if(Gw.msgT>0)Gw.msgT-=dt;
  const m=Math.hypot(st.x,st.y);let vx=st.x*sp,vy=st.y*sp;if(m>1){vx/=m;vy/=m}
  const _ox=P.x,_oy=P.y;if(!hitRect(Gw,P.x+vx*dt,P.y,14))P.x+=vx*dt;if(!hitRect(Gw,P.x,P.y+vy*dt,14))P.y+=vy*dt;if(Math.abs(vx)>4)P.face=vx>0?1:-1;
  /* leg check (Grey Heart, Oct 2026): stride phase from distance actually walked (was a fixed clock, even pushing into a wall), legs ease back to standing */
- {const _d=Math.hypot(P.x-_ox,P.y-_oy),mv=_d>dt*20;P.ph+=_d/18;P.moving=mv;P._ga=(P._ga||0)+((mv?1:0)-(P._ga||0))*Math.min(1,dt*10);if(!mv&&P._ga<.03){P._ga=0;P.ph=Math.round(P.ph/Math.PI)*Math.PI}}
+ {const _d=Math.hypot(P.x-_ox,P.y-_oy),mv=_d>dt*20,_v=_d/Math.max(dt,1e-3);P.ph+=Math.PI*dt*(_v<120?_v/120*1.75:Math.min(3,1.75+(_v-120)/90));/* cadence (arm check, Oct 30 2026): ~1.75 steps/s walking, ~2.75 at full speed (was ~3.9) */P.moving=mv;P._ga=(P._ga||0)+((mv?1:0)-(P._ga||0))*Math.min(1,dt*10);if(!mv&&P._ga<.03){P._ga=0;P.ph=Math.round(P.ph/Math.PI)*Math.PI}}
  if(Gw.kind==='prom'){
   for(const it of Gw.items)if(!it.got&&Math.hypot(it.x-P.x,it.y-P.y)<34){it.got=true;Gw.have[it.k]++;Gw.score+=100;sfx('pick');Gw.fx.push({x:it.x,y:it.y,t:0,s:'+100'});say(it.k==='fabric'?`Pink fabric ${Gw.have.fabric}/6`:`Lace ${Gw.have.lace}/4`,1.4)}
   for(const n of Gw.npc){n.x+=n.vx*dt;if(n.x<-40)n.x=Gw.w+40;if(n.x>Gw.w+40)n.x=-40;if(P.hit<=0&&Math.abs(n.x-P.x)<26&&Math.abs(n.y-P.y)<22){P.hit=.9;Gw.score=Math.max(0,Gw.score-50);sfx('hit');say('Whoa! Watch the skaters!',1.4)}}
